@@ -77,6 +77,8 @@ If you have any questions on how to use the function, comments on what could be 
 
 Reddit (best method): /u/nuadi
 
+In-game: Nuadi, CEO of Fem Bot Industries
+
 Twitter: @nuadibantine
 
 If you have a GitHub account, feel free to create issues, feature requests, etc.
