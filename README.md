@@ -78,7 +78,7 @@ The Google Sheets and Scripts platform comes with it's own set of limitations. T
 
 ## UrlFetchApp calls per day
 
-Google limits the number of UrlFetchApp service calls that you can make per day. You can view the limits on the [Services Dashboard](https://script.google.com/dashboard) by clicking on the Quota Limits tab. It's unclear if these limits are per Google Account or per Script.
+Google limits the number of UrlFetchApp service calls that you can make per day. You can view the limits on the [Services Dashboard](https://script.google.com/dashboard) by clicking on the Quota Limits tab. This limit is on your entire Google account, so using multiple spreadsheets is not a viable workaround.
 
 As a result of this limitation, it's not currently possible to construct a spreadsheet that requests the price of every item in EVE Online. It's recommended that you use GCS to build specific spreadsheets for tasks which benefit from pricing, but don't aim to analyze the entire market. I will work to develop methods to get around this limitation.
 
