@@ -3,10 +3,11 @@ GCS is a Google Code script designed for use in Google Sheets. It will enable yo
 
 # Contents
 
-1. Setup and Configuration
-2. Custom Function Use
-3. Troubleshooting
-4. Questions, Comments, Feedback
+1. [Setup and Configuration](#setup-and-configuration)
+2. [Custom Function Use](#custom-function-use)
+3. [Troubleshooting](#troubleshooting)
+4. [Known Issues](#known-issues)
+4. [Questions, Comments, Feedback](#questions-comments-feedback)
 
 # Setup and Configuration
 
@@ -70,6 +71,16 @@ The return value is the price for that item at a given station based on the orde
 >Request failed for https://crest-tq.eveonline.com/market/10000032/orders/sell/?type=http://crest-tq.eveonline.com/types/4247/ returned code 401. Truncated server response: {"message": "Authentication scope needed", "key": "authNeeded", "exceptionType": "UnauthorizedError"} (use muteHttpExceptions option to examine full response). (line 68, file "MarketScript")
 
 Make sure that you have the publicData scope selected for your application in the EVE Developers web site. If you see no scopes available, then select the CREST endpoint type for the application.
+
+# Known Issues
+
+The Google Sheets and Scripts platform comes with it's own set of limitations. These effect the GCS in different ways, which I've listed here with possible work arounds.
+
+## UrlFetchApp calls per day
+
+Google limits the number of UrlFetchApp service calls that you can make per day. You can view the limits on the [Services Dashboard](https://script.google.com/dashboard) by clicking on the Quota Limits tab. It's unclear if these limits are per Google Account or per Script.
+
+As a result of this limitation, it's not currently possible to construct a spreadsheet that requests the price of every item in EVE Online. It's recommended that you use GCS to build specific spreadsheets for tasks which benefit from pricing, but don't aim to analyze the entire market. I will work to develop methods to get around this limitation.
 
 # Questions, Comments, Feedback
 
