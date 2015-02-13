@@ -12,6 +12,7 @@ GCS is a Google Code script designed for use in Google Sheets. It will enable yo
 # Setup and Configuration
 
 1. First, you need to create an application through https://developers.eveonline.com. Specify the URL of your Google Sheet as the Callback URL. Make sure to select CREST Access and the publicData scope.
+  - **Important:** Make sure that the Google Sheet URL that you use for the Callback URL does not contain additional parameters such as `#gid=0` or `usp=sharing`. These can interfere with the callback process in CREST. See [Troubleshooting](#troubleshooting) for details.
 2. Create a Google Spreadsheet, if you don't have one already, and go to Tools > Script Editor.
 3. Copy the contents of MarketScript.gs into the editor window.
 4. From your application management page, copy the Client ID and Client Secret into the script. These are located on, or about, line 146 of the code in the getAuthToken() method.
@@ -68,9 +69,27 @@ The return value is the price for that item at a given station based on the orde
 
 # Troubleshooting
 
+## Confirm that you are using publicData scope
+
 >Request failed for https://crest-tq.eveonline.com/market/10000032/orders/sell/?type=http://crest-tq.eveonline.com/types/4247/ returned code 401. Truncated server response: {"message": "Authentication scope needed", "key": "authNeeded", "exceptionType": "UnauthorizedError"} (use muteHttpExceptions option to examine full response). (line 68, file "MarketScript")
 
 Make sure that you have the publicData scope selected for your application in the EVE Developers web site. If you see no scopes available, then select the CREST endpoint type for the application.
+
+## Malfunctioning callback URL
+
+>{"error":"invalid_request", "error_description":"Some parameters are either missing or invalid"}
+
+If your SSO URL fails on callback, it may be due to the Callback URL you provided in your application details. Make sure that the Google Sheet URL you provide does not contain any additional paramaters such as `#gid=0` or `usp=sharing`.
+
+Here are an examples of bad URLs
+
+>https://docs.google.com/spreadsheet/ccc?key=SHEET_KEY#gid=0
+
+>https://docs.google.com/spreadsheet/d/SHEET_KEY/edit#gid=0
+
+Here is an example of a good URL
+
+>https://docs.google.com/spreadsheet/d/SHEET_KEY
 
 # Known Issues
 
