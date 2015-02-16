@@ -254,10 +254,53 @@ function getPrice(jsonMarket, stationId, orderType)
 }
 
 /**
+ * Returns yesterdays market history for a given item.
+ *
+ * version 1.2
+ *
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {property} property the property you are trying to access; "orderCount", "lowPrice", "highPrice", "avgPrice", "volume"
+ */
+function getMarketHistory(itemId, regionId, property)
+{
+  var history = 0;
+  
+  // Validate incoming arguments
+  if (itemId == null || typeof(itemId) != "number")
+  {
+    history = "Invalid Item ID";
+  }
+  else if (regionId == null || typeof(regionId) != "number")
+  {
+    history = "Invalid Region ID";
+  }
+  else if (property != "orderCount" && property != "lowPrice" && property != "highPrice" && property != "avgPrice" && property != "volume")
+  {
+    history = "Property must be one of: 'orderCount', 'lowPrice', 'highPrice', 'avgPrice', 'volume'";
+  }
+  else
+  { 
+    // Setup variables for the market endpoint we want
+    var marketUrl = "http://public-crest.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
+  
+    // Make the call to get some market data
+    var marketResponse = fetchUrl(marketUrl);
+  
+    var jsonMarket = JSON.parse(marketResponse);
+  
+    // Get the desired property
+    var items = jsonMarket['items'];
+    var history = items[items.length - 1][property]
+  }
+  return history;
+}
+
+/**
  * Private helper method that wraps the UrlFetchApp in a semaphore
  * to prevent service overload.
  *
- * version 1.1
+ * version 1.2
  *
  * @param {url} url The URL to contact
  * @param {options} options The fetch options to utilize in the request
@@ -266,6 +309,14 @@ function fetchUrl(url, options)
 {
   var semaphore = "lock";
   var semaphoreLife = 2;
+
+  // Check the cache, we may already have this value
+  var httpResponse = url.length < 250 ? CacheService.getUserCache().get(url) : null;
+  if (httpResponse != null)
+  {
+    return httpResponse;
+  }
+  
   var lock = CacheService.getUserCache().get(semaphore);
   while (lock != null)
   {
@@ -274,8 +325,21 @@ function fetchUrl(url, options)
   }
   CacheService.getUserCache().put(semaphore, true, semaphoreLife);
 
-  var httpResponse = UrlFetchApp.fetch(url, options);
-
+  if (options == null)
+  {
+    httpResponse = UrlFetchApp.fetch(url);
+  }
+  else
+  {
+    httpResponse = UrlFetchApp.fetch(url, options);
+  }
+  
+  // Cache this http response, if it will fit
+  if (url.length < 250 && httpResponse.length < 100000)
+  {
+    CacheService.getUserCache().put(url, httpResponse, 500);
+  }
+  
   // Wait based on rate limit
   var requestsPerSecond = 30;
   Utilities.sleep(1000/requestsPerSecond);
