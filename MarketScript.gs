@@ -261,6 +261,7 @@ function getPrice(jsonMarket, stationId, orderType)
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
  * @param {property} property the property you are trying to access; "orderCount", "lowPrice", "highPrice", "avgPrice", "volume"
+ * @customfunction
  */
 function getMarketHistory(itemId, regionId, property)
 {
