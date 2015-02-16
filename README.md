@@ -4,10 +4,18 @@ GCS is a Google Code script designed for use in Google Sheets. It will enable yo
 # Contents
 
 1. [Setup and Configuration](#setup-and-configuration)
+2. [Features](#features)
 2. [Custom Function Use](#custom-function-use)
 3. [Troubleshooting](#troubleshooting)
 4. [Known Issues](#known-issues)
 4. [Questions, Comments, Feedback](#questions-comments-feedback)
+
+# Features
+
+GCS contains the following custom functions
+
+* **getMarketPrice**: This function authenticates with EVE CREST to access the real-time Market price for a given item in a region at a given station.
+* **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 
 # Setup and Configuration
 
