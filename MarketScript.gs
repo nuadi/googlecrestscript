@@ -1,4 +1,10 @@
 /**
+ * Global member variables for use with rate limits
+ */
+var cacheAccessLimit = 300;
+var lastCacheAccess = 0;
+
+/**
  * Private helper function that is used to initialize the refresh token
  */
 function initializeGetMarketPrice()
@@ -69,21 +75,20 @@ function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refres
       // Make sure that only one script is handling the auth token at a time
       var authLock = "authLock";
       var authLife = 30;
-      var tokenLock = CacheService.getUserCache().get(authLock);
+      var tokenLock = getCacheValue(authLock);
       while (tokenLock != null)
       {
-        Utilities.sleep(300);
-        tokenLock = CacheService.getUserCache().get(authLock);
+        tokenLock = getCacheValue(authLock);
       }
-      CacheService.getUserCache().put(authLock, true, authLife);
+      setCacheValue(authLock, true, authLife);
 
       // Get the current authorization token from the cache
-      var authToken = CacheService.getUserCache().get(tokenKey);
+      var authToken = getCacheValue(tokenKey);
 
       if (authToken != null)
       {
         // Release the auth token
-        CacheService.getUserCache().remove(authLock);
+        removeCacheValue(authLock);
 
         // Setup variables for the market endpoint we want
         var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
@@ -113,7 +118,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refres
         var isTokenSet = getAuthToken(authCode, tokenKey, refreshToken, refreshKey);
 
         // Release the auth token
-        CacheService.getUserCache().remove(authLock);
+        removeCacheValue(authLock);
 
         if (isTokenSet)
         {
@@ -189,7 +194,7 @@ function getAuthToken(authCode, tokenKey, refreshToken, refreshKey)
     // Cache the access token
     var accessToken = jsonToken['access_token'];
     var tokenLife = jsonToken['expires_in'];
-    CacheService.getUserCache().put(tokenKey, accessToken, tokenLife);
+    setCacheValue(tokenKey, accessToken, tokenLife);
     // Store the refresh token for this user
     var newRefreshToken = jsonToken['refresh_token'];
     PropertiesService.getUserProperties().setProperty(refreshKey, newRefreshToken);
@@ -312,19 +317,19 @@ function fetchUrl(url, options)
   var semaphoreLife = 2;
 
   // Check the cache, we may already have this value
-  var httpResponse = url.length < 250 ? CacheService.getUserCache().get(url) : null;
+  var httpResponse = url.length < 250 ? getCacheValue(url) : null;
   if (httpResponse != null)
   {
     return httpResponse;
   }
   
-  var lock = CacheService.getUserCache().get(semaphore);
+  var lock = getCacheValue(semaphore);
   while (lock != null)
   {
     Utilities.sleep(300);
-    lock = CacheService.getUserCache().get(semaphore);
+    lock = getCacheValue(semaphore);
   }
-  CacheService.getUserCache().put(semaphore, true, semaphoreLife);
+  setCacheValue(semaphore, true, semaphoreLife);
 
   if (options == null)
   {
@@ -338,7 +343,7 @@ function fetchUrl(url, options)
   // Cache this http response, if it will fit
   if (url.length < 250 && httpResponse.length < 100000)
   {
-    CacheService.getUserCache().put(url, httpResponse, 500);
+    setCacheValue(url, httpResponse, 500);
   }
   
   // Wait based on rate limit
@@ -346,9 +351,81 @@ function fetchUrl(url, options)
   Utilities.sleep(1000/requestsPerSecond);
 
   // We're done, so release semaphore
-  CacheService.getUserCache().remove(semaphore);
+  removeCacheValue(semaphore);
 
   return httpResponse;
+}
+
+/**
+ * Private helper method that will return a value from the CacheService
+ * based on the key provided. This method prevents service overload.
+ */
+function getCacheValue(key)
+{
+  // What time is it?
+  var currentTime = new Date().getTime();
+  var lastAccess = currentTime - lastCacheAccess;
+  if (lastAccess < cacheAccessLimit)
+  {
+    // We're goin too fast, slow down
+    var waitTime = cacheAccessLimit - lastAccess
+    Utilities.sleep(waitTime);
+    lastCacheAccess = currentTime + waitTime;
+  }
+  else
+  {
+    lastCacheAccess = currentTime;
+  }
+
+  return CacheService.getUserCache().get(key);
+}
+
+/**
+ * Private helper method that will set a value into the CacheService
+ * using the key provided. This method prevents service overload.
+ */
+function setCacheValue(key, value, life)
+{
+  // What time is it?
+  var currentTime = new Date().getTime();
+  var lastAccess = currentTime - lastCacheAccess;
+  if (lastAccess < cacheAccessLimit)
+  {
+    // We're goin too fast, slow down
+    var waitTime = cacheAccessLimit - lastAccess
+    Utilities.sleep(waitTime);
+    lastCacheAccess = currentTime + waitTime;
+  }
+  else
+  {
+    lastCacheAccess = currentTime;
+  }
+
+  return CacheService.getUserCache().put(key, value, life);
+}
+
+/**
+ * Private helper method that will remove a value from the CacheService
+ * using the key provided. This method prevents service overload.
+ */
+function removeCacheValue(key)
+{
+  // What time is it?
+  var currentTime = new Date().getTime();
+  var lastAccess = currentTime - lastCacheAccess;
+  if (lastAccess < cacheAccessLimit)
+  {
+    // We're goin too fast, slow down
+    var waitTime = cacheAccessLimit - lastAccess
+    Utilities.sleep(waitTime);
+    lastCacheAccess = currentTime + waitTime;
+  }
+  else
+  {
+    lastCacheAccess = currentTime;
+  }
+  
+  return CacheService.getUserCache().remove(key);
 }
 
 /**
