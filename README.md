@@ -6,6 +6,7 @@ GCS is a Google Code script designed for use in Google Sheets. It will enable yo
 1. [Setup and Configuration](#setup-and-configuration)
 2. [Features](#features)
 2. [Custom Function Use](#custom-function-use)
+5. [Examples](#examples)
 3. [Troubleshooting](#troubleshooting)
 4. [Known Issues](#known-issues)
 4. [Questions, Comments, Feedback](#questions-comments-feedback)
@@ -74,6 +75,21 @@ The return value is the price for that item at a given station based on the orde
 3. The orderType parameter must be "sell" or "buy". I leave this as an input so that you can feed in a cell value in case you want to flip the return price for an entire column or section of the sheet.
 4. The authCode parameter is not optional at this time, but my next effort will be to make it so that it can be omitted. For now, be sure to include a reference to the cell from step 10 of Configuration.
 5. The refresh parameter is optional, and is in fact never used inside the function. Google caches all function returns based on the input parameter array, so if the array doesn't change then neither does the output. This is inconsistent with a function that references dynamic content, so if you need to force Google to refresh the price, put a value in this paramter. Make sure that it is different every time. Flipping back and forth from "1" to "2" and back again does not work, it must be unique. I setup a cell at the top of my market page that I increment every time I need to force a refresh.
+
+# Examples
+
+## getMarketPrice
+
+Your formula should look something like this:
+
+    =getMarketPrice(29668, 10000032, 60011866, "sell", A1, 1)
+
+* 29668 : whatever item ID of the product you want prices for, in this case it's PLEX
+* 10000032 : the region ID for the market of interest, in this case it's Sinq Laison
+* 60011866 : the station ID for the station with the market of interest, in this case it's Dodoxie
+* "sell" : if you want sell orders, or "buy" if you want buy orders
+* A1 : This references a cell with your auth code in it. I do not recommend having the auth code copied into every function call, just put it in a cell and reference that.
+* 1 : The last argument can be any number. Change it if you think Google isn't updating the price, which can happen sometimes.
 
 # Troubleshooting
 
