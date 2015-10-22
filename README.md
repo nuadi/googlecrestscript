@@ -1,6 +1,10 @@
 # Google CREST Script (GCS)
 GCS is a Google Code script designed for use in Google Sheets. It will enable you to authenticate and access the Market endpoint inside EVE Online's CREST web service, and use custom functions to retrieve order data.
 
+# BE ADVISED THIS IS CHANGING
+
+See here: https://www.reddit.com/r/Eve/comments/3ptkw0/googlecrestscript_now_using_public_market_data/
+
 # Contents
 
 1. [Setup and Configuration](#setup-and-configuration)
