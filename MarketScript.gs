@@ -1,10 +1,4 @@
 /**
- * Global member variables for use with rate limits
- */
-var cacheAccessLimit = 300;
-var lastCacheAccess = 0;
-
-/**
  * Private helper function that is used to initialize the refresh token
  */
 function initializeGetMarketPrice()
