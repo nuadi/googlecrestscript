@@ -9,22 +9,20 @@ var lastCacheAccess = 0;
  */
 function initializeGetMarketPrice()
 {
-  var authCode = "LONG_AUTH_CODE";
-
   // Test Amarr Fuel Block in Dodixie
   var itemId = 20059;
   var regionId = 10000032;
   var stationId = 60011866;
   var orderType = "SELL";
 
-  var price = getMarketPrice(itemId, regionId, stationId, orderType, authCode);
+  var price = getMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
 
   itemId = 20059;
   regionId = 10000002;
   stationId = 60003760;
 
-  price = getMarketPrice(itemId, regionId, stationId, orderType, authCode);
+  price = getMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
 }
 
@@ -37,11 +35,10 @@ function initializeGetMarketPrice()
  * @param {regionId} regionId the region ID for the market to look up
  * @param {stationId} stationId the station ID for the market to focus on
  * @param {orderType} orderType this should be set to "sell" or "buy" orders
- * @param {authCode} authCode The authorization code provided by EVE SSO
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
  * @customfunction
  */
-function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refresh)
+function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
   try
   {
@@ -68,67 +65,16 @@ function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refres
     {
       orderType = orderType.toLowerCase();
 
-      // Setup keys for the cache
-      var tokenKey = "authToken";
-      var refreshKey = "refreshToken";
+      // Setup variables for the market endpoint we want
+      var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
+      var typeUrl = "?type=http://public-crest.eveonline.com/types/" + itemId + "/";
 
-      // Make sure that only one script is handling the auth token at a time
-      var authLock = "authLock";
-      var authLife = 30;
-      var tokenLock = getCacheValue(authLock);
-      while (tokenLock != null)
-      {
-        tokenLock = getCacheValue(authLock);
-      }
-      setCacheValue(authLock, true, authLife);
+      // Make the call to get some market data
+      var marketResponse = fetchUrl(marketUrl + typeUrl);
 
-      // Get the current authorization token from the cache
-      var authToken = getCacheValue(tokenKey);
+      var jsonMarket = JSON.parse(marketResponse);
 
-      if (authToken != null)
-      {
-        // Release the auth token
-        removeCacheValue(authLock);
-
-        // Setup variables for the market endpoint we want
-        var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-        var typeUrl = "?type=http://crest-tq.eveonline.com/types/" + itemId + "/";
-
-        var marketHeader = {
-          "Authorization" : "Bearer " + authToken
-        }
-
-        var marketOptions = {
-          "headers" : marketHeader
-        }
-
-        // Make the call to get some market data
-        var marketResponse = fetchUrl(marketUrl + typeUrl, marketOptions);
-
-        var jsonMarket = JSON.parse(marketResponse);
-
-        returnPrice = getPrice(jsonMarket, stationId, orderType)
-      }
-      else
-      {
-        // No authorization token available
-        // See if a refresh token exists
-        var refreshToken = PropertiesService.getUserProperties().getProperty(refreshKey);
-
-        var isTokenSet = getAuthToken(authCode, tokenKey, refreshToken, refreshKey);
-
-        // Release the auth token
-        removeCacheValue(authLock);
-
-        if (isTokenSet)
-        {
-          returnPrice = getMarketPrice(itemId, regionId, stationId, orderType, authCode, refresh);
-        }
-        else
-        {
-          returnPrice = "Auth failed. Check logs.";
-        }
-      }
+      returnPrice = getPrice(jsonMarket, stationId, orderType)
     }
   }
   catch (unknownError)
