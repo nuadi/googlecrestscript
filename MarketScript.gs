@@ -86,76 +86,6 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 }
 
 /**
- * Private helper function that requests an authorization token using
- * a give authorization code.
- *
- * version 1.0
- *
- * @param authCode The authorization code provided after logging in through EVE SSO
- * @param tokenKey The key to use for auth token storage in the cache
- * @param refresh_token The refresh token provided by previous token requests. Set to null if none exists.
- * @param refreshKey The key to use for refresh token storage in the cache
- */
-function getAuthToken(authCode, tokenKey, refreshToken, refreshKey)
-{
-  var tokenSet = false;
-
-  var clientId = "YOUR_CLIENT_ID";
-  var clientSecret = "YOUR_CLIENT_SECRET";
-  var clientEncoded = Utilities.base64Encode(clientId + ":" + clientSecret);
-
-  var tokenUrl = "https://login.eveonline.com/oauth/token/";
-
-  // Setup an options structure to configure the UrlFetchApp for token request
-  var headerConfig = {
-    "Authorization" : "Basic " + clientEncoded
-  };
-
-  var grantType = "authorization_code";
-  if (refreshToken != null)
-  {
-    grantType = "refresh_token";
-  }
-
-  var postPayload = {
-    "Host" : "https://login.eveonline.com",
-    "grant_type" : grantType,
-    "code" : authCode,
-    "refresh_token" : refreshToken
-  };
-
-  var fetchOptions = {
-    "method" : "post",
-    "headers" : headerConfig,
-    "payload" : postPayload
-  };
-
-  try
-  {
-    // Make the call to get a token
-    var tokenResponse = fetchUrl(tokenUrl, fetchOptions);
-
-    var jsonToken = JSON.parse(tokenResponse);
-
-    // Cache the access token
-    var accessToken = jsonToken['access_token'];
-    var tokenLife = jsonToken['expires_in'];
-    setCacheValue(tokenKey, accessToken, tokenLife);
-    // Store the refresh token for this user
-    var newRefreshToken = jsonToken['refresh_token'];
-    PropertiesService.getUserProperties().setProperty(refreshKey, newRefreshToken);
-
-    tokenSet = true;
-  }
-  catch (error)
-  {
-    throw error;
-  }
-
-  return tokenSet;
-}
-
-/**
  * Private helper method that will determine the best price for a given item from the
  * market data provided.
  *
@@ -234,7 +164,7 @@ function getMarketHistory(itemId, regionId, property)
   else
   { 
     // Setup variables for the market endpoint we want
-    var marketUrl = "http://public-crest.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
+    var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
   
     // Make the call to get some market data
     var marketResponse = fetchUrl(marketUrl);
@@ -262,21 +192,6 @@ function fetchUrl(url, options)
   var semaphore = "lock";
   var semaphoreLife = 2;
 
-  // Check the cache, we may already have this value
-  var httpResponse = url.length < 250 ? getCacheValue(url) : null;
-  if (httpResponse != null)
-  {
-    return httpResponse;
-  }
-  
-  var lock = getCacheValue(semaphore);
-  while (lock != null)
-  {
-    Utilities.sleep(300);
-    lock = getCacheValue(semaphore);
-  }
-  setCacheValue(semaphore, true, semaphoreLife);
-
   if (options == null)
   {
     httpResponse = UrlFetchApp.fetch(url);
@@ -286,102 +201,21 @@ function fetchUrl(url, options)
     httpResponse = UrlFetchApp.fetch(url, options);
   }
   
-  // Cache this http response, if it will fit
-  if (url.length < 250 && httpResponse.length < 100000)
-  {
-    setCacheValue(url, httpResponse, 500);
-  }
-  
   // Wait based on rate limit
-  var requestsPerSecond = 30;
+  var requestsPerSecond = 150;
   Utilities.sleep(1000/requestsPerSecond);
 
-  // We're done, so release semaphore
-  removeCacheValue(semaphore);
-
   return httpResponse;
-}
-
-/**
- * Private helper method that will return a value from the CacheService
- * based on the key provided. This method prevents service overload.
- */
-function getCacheValue(key)
-{
-  // What time is it?
-  var currentTime = new Date().getTime();
-  var lastAccess = currentTime - lastCacheAccess;
-  if (lastAccess < cacheAccessLimit)
-  {
-    // We're goin too fast, slow down
-    var waitTime = cacheAccessLimit - lastAccess
-    Utilities.sleep(waitTime);
-    lastCacheAccess = currentTime + waitTime;
-  }
-  else
-  {
-    lastCacheAccess = currentTime;
-  }
-
-  return CacheService.getUserCache().get(key);
-}
-
-/**
- * Private helper method that will set a value into the CacheService
- * using the key provided. This method prevents service overload.
- */
-function setCacheValue(key, value, life)
-{
-  // What time is it?
-  var currentTime = new Date().getTime();
-  var lastAccess = currentTime - lastCacheAccess;
-  if (lastAccess < cacheAccessLimit)
-  {
-    // We're goin too fast, slow down
-    var waitTime = cacheAccessLimit - lastAccess
-    Utilities.sleep(waitTime);
-    lastCacheAccess = currentTime + waitTime;
-  }
-  else
-  {
-    lastCacheAccess = currentTime;
-  }
-
-  return CacheService.getUserCache().put(key, value, life);
-}
-
-/**
- * Private helper method that will remove a value from the CacheService
- * using the key provided. This method prevents service overload.
- */
-function removeCacheValue(key)
-{
-  // What time is it?
-  var currentTime = new Date().getTime();
-  var lastAccess = currentTime - lastCacheAccess;
-  if (lastAccess < cacheAccessLimit)
-  {
-    // We're goin too fast, slow down
-    var waitTime = cacheAccessLimit - lastAccess
-    Utilities.sleep(waitTime);
-    lastCacheAccess = currentTime + waitTime;
-  }
-  else
-  {
-    lastCacheAccess = currentTime;
-  }
-  
-  return CacheService.getUserCache().remove(key);
 }
 
 /**
  * Private helper method that is used to examine function execution
  * in an effort to optimize performance.
  */
-function profileGetMarketPrice(itemId, regionId, stationId, orderType, authCode)
+function profileGetMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
   var startTime = new Date().getTime();
-  var price = getMarketPrice(itemId, regionId, stationId, orderType, authCode);
+  var price = getMarketPrice(itemId, regionId, stationId, orderType, refresh);
   var endTime = new Date().getTime();
 
   if (typeof(price) == 'number')
