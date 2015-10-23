@@ -78,6 +78,64 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 }
 
 /**
+ * Custom function that returns an array of prices for a given array
+ * of items.
+ *
+ * @param {itemIdList} itemIdList the list of item IDs of the products to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {stationId} stationId the station ID for the market to focus on
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @customfunction
+ */
+function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
+{
+  var returnValues = [];
+
+  try
+  {
+    // Only validate arguments within the context of this function
+    // Further validation will occur inside getMarketPrice
+    if (itemIdList == null || typeof(itemIdList) != "object")
+    {
+      returnValues = "Invalid Item list";
+    }
+    else
+    {
+      for (var itemIndex = 0; itemIndex < itemIdList.length; itemIndex++)
+      {
+        var itemId = itemIdList[itemIndex];
+        if (typeof(itemId) == "object")
+        {
+          // This needs to be fixed before passing to getMarketPrice() function
+          if (itemId.length == 1)
+          {
+            // This is only a number
+            itemId = Number(itemId);
+          }
+        }
+
+        // Make sure to handle blank cells accordingly
+        if (itemId > 0)
+        {
+          returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType)
+        }
+        else
+        {
+          returnValues[itemIndex] = "";
+        }
+      }
+    }
+  }
+  catch (error)
+  {
+    returnValues = error.message;
+  }
+
+  return returnValues;
+}
+
+/**
  * Private helper method that will determine the best price for a given item from the
  * market data provided.
  *
