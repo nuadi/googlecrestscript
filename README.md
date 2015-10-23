@@ -17,6 +17,7 @@ GCS contains the following custom functions
 
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
+* **getMarketPriceList**: This function is volitile. Rease [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 
 # Setup and Configuration
 
@@ -87,6 +88,12 @@ The Google Sheets and Scripts platform comes with it's own set of limitations. T
 Google limits the number of UrlFetchApp service calls that you can make per day. You can view the limits on the [Services Dashboard](https://script.google.com/dashboard) by clicking on the Quota Limits tab. This limit is on your entire Google account, so using multiple spreadsheets is not a viable workaround.
 
 As a result of this limitation, it's not currently possible to construct a spreadsheet that requests the price of every item in EVE Online. It's recommended that you use GCS to build specific spreadsheets for tasks which benefit from pricing, but don't aim to analyze the entire market. If you simply cannot avoid this limitation with your spreadsheet, then you will either need to build a program yourself, or find someone who has a program to perform the analysis you need.
+
+## The Multi-Pull function and Google's limits
+
+Google limits all custom functions to 30 seconds or less. If a custom function exceeds this time, an '#ERROR' type is returned indicating as such. Since the multi-pull function is only making individual calls for a list of items, you may run into this limit from time to time. How many items you can put into an item ID list will depend on a number of factors including: the CREST server response time to Google, Google's server performance, the amount of data to sort through for each item.
+
+If you hit the limit, reduce your item ID list by half, and observe behavior. If it continues, repeat the cleave until you're stable. If it stabilizes, then now you have a min-max range for your particular case, and you can continue to tinker within that range where you feel comfortable.
 
 # Questions, Comments, Feedback
 
