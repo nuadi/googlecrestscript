@@ -17,7 +17,7 @@ GCS contains the following custom functions
 
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
-* **getMarketPriceList**: This function is volitile. Rease [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
+* **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 
 # Setup and Configuration
 
