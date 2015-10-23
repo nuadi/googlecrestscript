@@ -23,7 +23,7 @@ function initializeGetMarketPrice()
 /**
  * Returns the market price for a given item.
  *
- * version 1.1
+ * version 1.2
  *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
@@ -64,10 +64,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
       var typeUrl = "?type=http://public-crest.eveonline.com/types/" + itemId + "/";
 
       // Make the call to get some market data
-      var marketResponse = fetchUrl(marketUrl + typeUrl);
-
-      var jsonMarket = JSON.parse(marketResponse);
-
+      var jsonMarket = JSON.parse(fetchUrl(marketUrl + typeUrl));
       returnPrice = getPrice(jsonMarket, stationId, orderType)
     }
   }
@@ -76,6 +73,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
     returnPrice = unknownError.message;
   }
 
+  SpreadsheetApp.flush();
   return returnPrice;
 }
 
@@ -83,7 +81,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
  * Private helper method that will determine the best price for a given item from the
  * market data provided.
  *
- * version 1.1
+ * version 1.2
  *
  * @param {jsonMarket} jsonMarket the market data in JSON format
  * @param {stationId} stationId the station ID to focus the search on
@@ -98,9 +96,7 @@ function getPrice(jsonMarket, stationId, orderType)
   for (var orderIndex = 0; orderIndex < orders.length; orderIndex++)
   {
     var order = orders[orderIndex];
-    var location = order['location'];
-
-    if (stationId == location['id'])
+    if (stationId == order['location']['id'])
     {
       // This is the station market we want
       var price = order['price'];
@@ -131,7 +127,7 @@ function getPrice(jsonMarket, stationId, orderType)
 /**
  * Returns yesterdays market history for a given item.
  *
- * version 1.2
+ * version 1.3
  *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
@@ -161,9 +157,7 @@ function getMarketHistory(itemId, regionId, property)
     var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
   
     // Make the call to get some market data
-    var marketResponse = fetchUrl(marketUrl);
-  
-    var jsonMarket = JSON.parse(marketResponse);
+    var jsonMarket = JSON.parse(fetchUrl(marketUrl));
   
     // Get the desired property
     var items = jsonMarket['items'];
@@ -176,16 +170,15 @@ function getMarketHistory(itemId, regionId, property)
  * Private helper method that wraps the UrlFetchApp in a semaphore
  * to prevent service overload.
  *
- * version 1.2
+ * version 1.3
  *
  * @param {url} url The URL to contact
  * @param {options} options The fetch options to utilize in the request
  */
 function fetchUrl(url, options)
 {
-  var semaphore = "lock";
-  var semaphoreLife = 2;
-
+  var lock = LockService.getUserLock().tryLock(1000/150);
+  // Make the call using the appropriate service method
   if (options == null)
   {
     httpResponse = UrlFetchApp.fetch(url);
@@ -194,10 +187,8 @@ function fetchUrl(url, options)
   {
     httpResponse = UrlFetchApp.fetch(url, options);
   }
-  
-  // Wait based on rate limit
-  var requestsPerSecond = 150;
-  Utilities.sleep(1000/requestsPerSecond);
+  if (lock)
+    LockService.getUserLock().releaseLock();
 
   return httpResponse;
 }
