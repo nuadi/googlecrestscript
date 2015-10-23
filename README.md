@@ -75,6 +75,15 @@ Your formula should look something like this:
 * "sell" : if you want sell orders, or "buy" if you want buy orders
 * 1 : The last argument can be any value. Change it if you think Google isn't updating the price, which can happen sometimes.
 
+## getMarketPriceList
+
+Your formula should look something like this:
+
+    =getMarketPriceList(A1:A10, 10000032, 60011866, "sell", 1)
+
+* A1:A10 : the range of item IDs you would like to pull prices for
+* All remaining arguments are the same as the example above
+
 # Troubleshooting
 
 After authenticated endpoints were removed, there is presently nothing to really troubleshoot. If you hit something, contact me.
