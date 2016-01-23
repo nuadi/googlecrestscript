@@ -58,7 +58,7 @@ The return value is the price for that item at a given station based on the orde
 
   Rens ID	60004588
 
-3. The orderType parameter must be "sell" or "buy". I leave this as an input so that you can feed in a cell value in case you want to flip the return price for an entire column or section of the sheet.
+3. The orderType parameter must be `"sell"` or `"buy"` - quotes required. I leave this as an input so that you can feed in a cell value in case you want to flip the return price for an entire column or section of the sheet.
 4. The refresh parameter is optional, and is in fact never used inside the function. Google caches all function returns based on the input parameter array, so if the array doesn't change then neither does the output. This is inconsistent with a function that references dynamic content, so if you need to force Google to refresh the price, put a value in this paramter. Make sure that it is different every time. Flipping back and forth from "1" to "2" and back again does not work, it must be unique. I setup a cell at the top of my market page that I increment every time I need to force a refresh. Do not use the '=now()' function, or something that changes dynamically or the script will never return a value.
 
 # Examples
