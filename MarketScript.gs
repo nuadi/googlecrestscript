@@ -61,7 +61,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 
       // Setup variables for the market endpoint we want
       var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-      var typeUrl = "?type=http://public-crest.eveonline.com/types/" + itemId + "/";
+      var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
 
       // Make the call to get some market data
       var jsonMarket = JSON.parse(fetchUrl(marketUrl + typeUrl));
