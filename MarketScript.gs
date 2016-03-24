@@ -1,11 +1,15 @@
 // Google Crest Script (GCS)
-// version 4c
+// version 4d
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
 
 // Global variable needed to track number of retries attempted
 var retries = 0;
+// Global variables used in order comparison function and set by
+// Advanced Orders function. Default is the Price column.
+var sortIndex = 1;
+var sortOrder = 1;
 
 /**
  * Private helper function that is used to initialize the refresh token
@@ -34,7 +38,6 @@ function initializeGetMarketPrice()
  */
 function compareOrders(order1, order2)
 {
-  var sortIndex = 1;
   var comparison = 0;
   if (order1[sortIndex] < order2[sortIndex])
   {
@@ -44,7 +47,7 @@ function compareOrders(order1, order2)
   {
     comparison = 1;
   }
-  return comparison;
+  return comparison * sortOrder;
 }
 
 /**
@@ -62,15 +65,15 @@ function getMarketJson(itemId, regionId, orderType)
   // Validate incoming arguments
   if (itemId == null || typeof(itemId) != "number")
   {
-    marketData = "Invalid Item ID";
+    throw new Error("Invalid Item ID");
   }
   else if (regionId == null || typeof(regionId) != "number")
   {
-    marketData = "Invalid Region ID";
+    throw new Error("Invalid Region ID");
   }
   else if (orderType == null || typeof(orderType) != "string" || orderType.toLowerCase() != 'sell' && orderType.toLowerCase() != 'buy')
   {
-    marketData = "Invalid order type";
+    throw new Error("Invalid order type");
   }
   else
   {
@@ -139,7 +142,7 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 
   if (stationId == null || typeof(stationId) != "number")
   {
-    returnPrice = "Invalid Station ID";
+    throw new Error("Invalid Station ID");
   }
   else
   {
@@ -177,7 +180,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
   // Further validation will occur inside getMarketPrice
   if (itemIdList == null || typeof(itemIdList) != "object")
   {
-    returnValues = "Invalid Item list";
+    throw new Error("Invalid Item list");
   }
   else
   {
@@ -212,19 +215,20 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
 /**
  * Return all market orders for an item from a region.
  *
- * @param {itemId}
- * @param {regionId}
- * @param {orderType}
- * @param {refresh}
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
  * @customfunction
  */
 function getOrders(itemId, regionId, orderType, refresh)
 {
   var marketReturn = [];
+  marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
   
   if (orderType != 'sell')
   {
-    marketReturn = "Invalid order type";
+    throw new Error("Invalid order type");
   }
   else
   {
@@ -233,7 +237,7 @@ function getOrders(itemId, regionId, orderType, refresh)
     var marketItems = jsonMarket['items'];
     
     // Convert to an array for proper output
-    marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
+    var outputArray = [];
     for (var rowKey in marketItems)
     {
       var rowData = marketItems[rowKey];
@@ -257,12 +261,83 @@ function getOrders(itemId, regionId, orderType, refresh)
           newRow.push(locationData['name']);
         }
       }
-      marketReturn.push(newRow);
+      outputArray.push(newRow);
     }
-    marketReturn.sort(compareOrders);
+    outputArray.sort(compareOrders);
+    marketReturn = marketReturn.concat(outputArray);
   }
 
   SpreadsheetApp.flush();
+  return marketReturn;
+}
+
+/**
+ * Advanced version of getOrders.
+ *
+ * @param {options} See README in GitHub repo.
+ * @customfunction
+ */
+function getOrdersAdv(options)
+{
+  var marketReturn = [];
+
+  var itemId = null;
+  var regionId = null;
+  var orderType = null;
+
+  if (options.length <= 0)
+  {
+    throw new Error("No options found");
+  }
+  else if (options[0].length < 2)
+  {
+    throw new Error("Options must have 2 columns");
+  }
+
+  for (var row = 0; row < options.length; row++)
+  {
+    for (var col = 0; col < options[row].length; col++)
+    {
+      var optionKey = options[row][col];
+      var optionValue = options[row][++col];
+      if (optionKey == 'itemId')
+      {
+        itemId = optionValue;
+      }
+      else if (optionKey == 'regionId')
+      {
+        regionId = optionValue;
+      }
+      else if (optionKey == 'orderType')
+      {
+        orderType = optionValue;
+      }
+      else if (optionKey == 'sortIndex')
+      {
+        sortIndex = optionValue;
+      }
+      else if (optionKey == 'sortOrder')
+      {
+        sortOrder = optionValue;
+      }
+    }
+  }
+
+  if (itemId == null)
+  {
+    throw new Error('No "itemId" option found');
+  }
+  else if (regionId == null)
+  {
+    throw new Error('No "regionId" option found');
+  }
+  else if (orderType == null)
+  {
+    throw new Error('No "orderType" option found');
+  }
+
+  marketReturn = getOrders(itemId, regionId, orderType);
+
   return marketReturn;
 }
 
@@ -326,15 +401,15 @@ function getMarketHistory(itemId, regionId, property)
   // Validate incoming arguments
   if (itemId == null || typeof(itemId) != "number")
   {
-    history = "Invalid Item ID";
+    throw new Error("Invalid Item ID");
   }
   else if (regionId == null || typeof(regionId) != "number")
   {
-    history = "Invalid Region ID";
+    throw new Error("Invalid Region ID");
   }
   else if (property != "orderCount" && property != "lowPrice" && property != "highPrice" && property != "avgPrice" && property != "volume")
   {
-    history = "Property must be one of: 'orderCount', 'lowPrice', 'highPrice', 'avgPrice', 'volume'";
+    throw new Error("Property must be one of: 'orderCount', 'lowPrice', 'highPrice', 'avgPrice', 'volume'");
   }
   else
   { 
