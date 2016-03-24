@@ -1,5 +1,5 @@
 # Google CREST Script (GCS)
-GCS is a Google Code script designed for use in Google Sheets. It will enable you to authenticate and access the Market endpoint inside EVE Online's CREST web service, and use custom functions to retrieve order data.
+GCS is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the Market endpoint inside EVE Online's CREST web service.
 
 # Contents
 
@@ -18,13 +18,14 @@ GCS contains the following custom functions
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
+* **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region. Note: It only supports sell orders at this time.
 
 # Setup and Configuration
 
 1. Create a Google Spreadsheet, if you don't have one already, and go to Tools > Script Editor.
-2. Copy the contents of MarketScript.gs into the editor window.
+2. Copy the contents of MarketScript.gs into the editor window and save the script. You may need to name the project to save it, so use any name.
 3. At the top of the Script Editor window, select the initializeGetMarketPrice function from the drop-down list (where it says Select Function), and then hit the Run button (Play button) to the left.
-4. Authorize the script to make contact with external services and manage data associated with the application. These are required for the UrlFetchApp.
+4. Authorize the script to make contact with external services. This are required for the UrlFetchApp.
 5. It will say "Running initializeGetMarketPrice" at the top. Once this has disappeared, go to View > Logs. In it, you should see something like
 
   [15-02-05 09:31:33:751 EST] 1.73835E8
@@ -83,6 +84,14 @@ Your formula should look something like this:
 
 * A1:A10 : the range of item IDs you would like to pull prices for
 * All remaining arguments are the same as the example above
+ 
+## getOrders
+
+Your formula should look something like this:
+
+    =getOrders(29668, 10000032, "sell", 1)
+
+See the getMarketPrice for a description of these parameters. This function will return a 2D array 4 columns wide and an unknown number of rows high which will populate a sheet starting with the cell you called the function in, and then proceed to the right and down the sheet. If any cell would be overwritten, the function will fail with a #REF! error, so be sure the formula has the space it needs. If there are not enough columns to the right or rows beneath the function cell, Google Sheets will expand your sheet for you. However, the number of columns and rows added may far exceed what the function needs, so if you care about sheet size please keep this in mind.
 
 # Troubleshooting
 
