@@ -1,3 +1,12 @@
+// Google Crest Script (GCS)
+// version 4a
+// /u/nuadi @ Reddit
+//
+// LICENSE: Use at your own risk, and fly safe.
+
+// Global variable needed to track number of retries attempted
+var retries = 0;
+
 /**
  * Private helper function that is used to initialize the refresh token
  */
@@ -22,8 +31,6 @@ function initializeGetMarketPrice()
 
 /**
  * Returns the market price for a given item.
- *
- * version 1.2
  *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
@@ -70,7 +77,27 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
   }
   catch (unknownError)
   {
-    returnPrice = unknownError.message;
+    Logger.log(unknownError);
+    var addressError = "Address unavailable:";
+    if (unknownError.message.slice(0, addressError.length) == addressError)
+    {
+      var maxRetries = 3;
+
+      // See if we can try again
+      if (retries <= maxRetries)
+      {
+        retries++;
+        returnPrice = getMarketPrice(itemId, regionId, stationId, orderType, refresh); 
+      }
+      else
+      {
+        returnPrice = "";
+        for (i in unknownError)
+        {
+          returnPrice += i + ": " + unknownError[i] + "\n";
+        }
+      }
+    }
   }
 
   SpreadsheetApp.flush();
@@ -129,17 +156,121 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
   }
   catch (error)
   {
-    returnValues = error.message;
+    returnValues = "Error received = " + error.message;
   }
 
   return returnValues;
 }
 
 /**
+ * Return all market orders for an item from a region.
+ *
+ * @param {itemId}
+ * @param {regionId}
+ * @param {orderType}
+ * @param {refresh}
+ * @customfunction
+ */
+function getOrders(itemId, regionId, orderType, refresh)
+{
+  try
+  {
+    var marketReturn = [];
+
+    // Validate incoming arguments
+    if (itemId == null || typeof(itemId) != "number")
+    {
+      marketReturn = "Invalid Item ID";
+    }
+    else if (regionId == null || typeof(regionId) != "number")
+    {
+      marketReturn = "Invalid Region ID";
+    }
+    else if (orderType == null || typeof(orderType) != "string")
+    {
+      marketReturn = "Invalid order type";
+    }
+    else
+    {
+      orderType = orderType.toLowerCase();
+
+      if (orderType != 'sell')
+      {
+        marketReturn = "Invalid order type";
+      }
+      else
+      {
+        // Setup variables for the market endpoint we want
+        var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
+        var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
+        Logger.log('Calling URL: ' + marketUrl + typeUrl);
+
+        // Make the call to get some market data
+        var jsonMarket = JSON.parse(fetchUrl(marketUrl + typeUrl));
+        var marketItems = jsonMarket['items'];
+
+        // Convert to an array for proper output
+        marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
+        for (var rowKey in marketItems)
+        {
+          var rowData = marketItems[rowKey];
+          var newRow = [];
+          for (var colKey in rowData)
+          {
+            if (colKey == 'issued')
+            {
+              var dateValues = rowData[colKey].split(/[T-]/);
+              var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
+              Logger.log("Converting date string: " + dateString);
+              newRow.push(new Date(dateString));
+            }
+            else if (colKey == 'price' || colKey == 'volume')
+            {
+              newRow.push(rowData[colKey]);
+            }
+            else if (colKey == 'location')
+            {
+              var locationData = rowData[colKey];
+              newRow.push(locationData['name']);
+            }
+          }
+          marketReturn.push(newRow);
+        }
+      }
+    }
+  }
+  catch (unknownError)
+  {
+    Logger.log(unknownError);
+    var addressError = "Address unavailable:";
+    if (unknownError.message.slice(0, addressError.length) == addressError)
+    {
+      var maxRetries = 3;
+
+      // See if we can try again
+      if (retries <= maxRetries)
+      {
+        retries++;
+        marketReturn = getOrders(itemId, regionId, orderType, refresh); 
+      }
+      else
+      {
+        marketReturn = "";
+        for (i in unknownError)
+        {
+          marketReturn += i + ": " + unknownError[i] + "\n";
+        }
+      }
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return marketReturn;
+}
+
+/**
  * Private helper method that will determine the best price for a given item from the
  * market data provided.
- *
- * version 1.2
  *
  * @param {jsonMarket} jsonMarket the market data in JSON format
  * @param {stationId} stationId the station ID to focus the search on
@@ -185,8 +316,6 @@ function getPrice(jsonMarket, stationId, orderType)
 /**
  * Returns yesterdays market history for a given item.
  *
- * version 1.3
- *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
  * @param {property} property the property you are trying to access; "orderCount", "lowPrice", "highPrice", "avgPrice", "volume"
@@ -228,23 +357,17 @@ function getMarketHistory(itemId, regionId, property)
  * Private helper method that wraps the UrlFetchApp in a semaphore
  * to prevent service overload.
  *
- * version 1.3
- *
  * @param {url} url The URL to contact
  * @param {options} options The fetch options to utilize in the request
  */
-function fetchUrl(url, options)
+function fetchUrl(url)
 {
   var lock = LockService.getUserLock().tryLock(1000/150);
-  // Make the call using the appropriate service method
-  if (options == null)
-  {
-    httpResponse = UrlFetchApp.fetch(url);
-  }
-  else
-  {
-    httpResponse = UrlFetchApp.fetch(url, options);
-  }
+  // Make the service call
+  headers = {"User-Agent": "Google Crest Script version 4a (/u/nuadi @Reddit.com)"}
+  params = {"headers": headers}
+  httpResponse = UrlFetchApp.fetch(url, params);
+  
   if (lock)
     LockService.getUserLock().releaseLock();
 
