@@ -19,6 +19,7 @@ GCS contains the following custom functions
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region. Note: It only supports sell orders at this time.
+* **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
 
 # Setup and Configuration
 
@@ -96,6 +97,34 @@ See the getMarketPrice for a description of these parameters.
 This function will return a 2D array 4 columns wide and an unknown number of rows high which will populate a sheet starting with the cell you called the function in, and then proceed to the right and down the sheet. The four columns have headers, and are titled Issued, Price, Volume, and Location. The rows are automatically sorted by price, lowest to highest.
 
 If any cell would be overwritten, the function will fail with a #REF! error, so be sure the formula has the space it needs. If there are not enough columns to the right or rows beneath the function cell, Google Sheets will expand your sheet for you. However, the number of columns and rows added may far exceed what the function needs, so if you care about sheet size please keep this in mind.
+
+## getOrdersAdv
+
+This function requires a 2D array of options that is 2 columns wide and at least 3 rows high. Setup a range of cells like the following
+
+| | A | B
+|---|:--|--:
+|1| itemId | 29668
+|2| regionId | 10000002
+|3| orderType | sell
+|4| sortIndex | 1
+|5| sortOrder | 1
+|6| Refresh | y
+
+and your function call will look like this
+
+    =getOrdersAdv(A1:B6)
+
+The available options are shown in the table below. All option keys are case sensitive.
+
+| Option Key | Required? | Description
+|:--|---|:--
+| itemId | Yes | The ID of the item to look for. Must be a number value.
+| regionId | Yes | The region ID to look in. Must be a number value.
+| orderType | Yes | The order types to return. Must be "sell". Will add "buy" at a later date.
+| sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location
+| sortOrder | no | Number value for sort order. 1 = Normal order, -1 = Reverse order
+| Refresh | no | Same as all refresh parameters. Never used. Can be any deterministic value.
 
 # Troubleshooting
 
