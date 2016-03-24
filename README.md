@@ -60,7 +60,7 @@ The return value is the price for that item at a given station based on the orde
   Rens ID	60004588
 
 3. The orderType parameter must be `"sell"` or `"buy"` - quotes required. I leave this as an input so that you can feed in a cell value in case you want to flip the return price for an entire column or section of the sheet.
-4. The refresh parameter is optional, and is in fact never used inside the function. Google caches all function returns based on the input parameter array, so if the array doesn't change then neither does the output. This is inconsistent with a function that references dynamic content, so if you need to force Google to refresh the price, put a value in this paramter. Make sure that it is different every time. Flipping back and forth from "1" to "2" and back again does not work, it must be unique. I setup a cell at the top of my market page that I increment every time I need to force a refresh. Do not use the '=now()' function, or something that changes dynamically or the script will never return a value.
+4. The refresh parameter is optional, and is in fact never used inside the function. Google caches all function returns based on the input parameter array, so if the array doesn't change then neither does the output. This is inconsistent with a function that references dynamic content, so if you need to force Google to refresh the price, put a value in this paramter. Make sure that it is different every time. Flipping back and forth from "1" to "2" and back again does not work, it must be unique. I setup a cell at the top of my market page that I increment every time I need to force a refresh. Do not use the '=now()' function, or something that changes dynamically or the script will never return a value. See [Troubleshooting](#troubleshooting) for more details.
 
 # Examples
 
@@ -74,7 +74,7 @@ Your formula should look something like this:
 * 10000032 : the region ID for the market of interest, in this case it's Sinq Laison
 * 60011866 : the station ID for the station with the market of interest, in this case it's Dodoxie
 * "sell" : if you want sell orders, or "buy" if you want buy orders
-* 1 : The last argument can be any value. Change it if you think Google isn't updating the price, which can happen sometimes.
+* 1 : The last argument can be any value, and is used to reload the function. Read [Troubleshooting](#troubleshooting) for more details.
 
 ## getMarketPriceList
 
@@ -91,11 +91,21 @@ Your formula should look something like this:
 
     =getOrders(29668, 10000032, "sell", 1)
 
-See the getMarketPrice for a description of these parameters. This function will return a 2D array 4 columns wide and an unknown number of rows high which will populate a sheet starting with the cell you called the function in, and then proceed to the right and down the sheet. If any cell would be overwritten, the function will fail with a #REF! error, so be sure the formula has the space it needs. If there are not enough columns to the right or rows beneath the function cell, Google Sheets will expand your sheet for you. However, the number of columns and rows added may far exceed what the function needs, so if you care about sheet size please keep this in mind.
+See the getMarketPrice for a description of these parameters.
+
+This function will return a 2D array 4 columns wide and an unknown number of rows high which will populate a sheet starting with the cell you called the function in, and then proceed to the right and down the sheet. The four columns have headers, and are titled Issued, Price, Volume, and Location. The rows are automatically sorted by price, lowest to highest.
+
+If any cell would be overwritten, the function will fail with a #REF! error, so be sure the formula has the space it needs. If there are not enough columns to the right or rows beneath the function cell, Google Sheets will expand your sheet for you. However, the number of columns and rows added may far exceed what the function needs, so if you care about sheet size please keep this in mind.
 
 # Troubleshooting
 
-After authenticated endpoints were removed, there is presently nothing to really troubleshoot. If you hit something, contact me.
+## Function not updating and the reload parameter
+
+Google will automatically reload the function every few minutes. I'm not aware of any official timer, but it seems to be between 3-5 minutes (YMMV). It is for this reason that I provide the refresh parameter in the functions. One very important note: the argument value must be deterministic. Here is what Google has to say on the matter (from their [Custom Functions documentation](https://developers.google.com/apps-script/guides/sheets/functions#arguments))
+
+>Custom function arguments must be deterministic. That is, built-in spreadsheet functions that return a different result each time they calculate — such as NOW() or RAND() — are not allowed as arguments to a custom function. If a custom function tries to return a value based on one of these volatile built-in function, it will display Loading... indefinitely.
+
+Some users have tried to use non-deterministic values for this argument. Keep in mind that it is there only so that you can force a reload faster than what Google already does. If you are stuck with a `Loading...` message for more than 1-2 minutes, then you have a dynamic argument in the function parameters and it must be removed.
 
 # Known Issues
 
