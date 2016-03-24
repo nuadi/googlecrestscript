@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4a
+// version 4b
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -12,8 +12,8 @@ var retries = 0;
  */
 function initializeGetMarketPrice()
 {
-  // Test Amarr Fuel Block in Dodixie
-  var itemId = 20059;
+  // Test PLEX in Dodixie
+  var itemId = 29668;
   var regionId = 10000032;
   var stationId = 60011866;
   var orderType = "SELL";
@@ -21,12 +21,30 @@ function initializeGetMarketPrice()
   var price = getMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
 
-  itemId = 20059;
+  // Now in Jita
   regionId = 10000002;
   stationId = 60003760;
 
   price = getMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
+}
+
+/**
+ * Private helper method that will compare two market orders.
+ */
+function compareOrders(order1, order2)
+{
+  var sortIndex = 1;
+  var comparison = 0;
+  if (order1[sortIndex] < order2[sortIndex])
+  {
+    comparison = -1;
+  }
+  else if (order1[sortIndex] > order2[sortIndex])
+  {
+    comparison = 1;
+  }
+  return comparison;
 }
 
 /**
@@ -236,6 +254,7 @@ function getOrders(itemId, regionId, orderType, refresh)
           }
           marketReturn.push(newRow);
         }
+        marketReturn.sort(compareOrders);
       }
     }
   }
@@ -364,7 +383,7 @@ function fetchUrl(url)
 {
   var lock = LockService.getUserLock().tryLock(1000/150);
   // Make the service call
-  headers = {"User-Agent": "Google Crest Script version 4a (/u/nuadi @Reddit.com)"}
+  headers = {"User-Agent": "Google Crest Script version 4b (/u/nuadi @Reddit.com)"}
   params = {"headers": headers}
   httpResponse = UrlFetchApp.fetch(url, params);
   
