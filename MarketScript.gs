@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4b
+// version 4c
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -48,6 +48,82 @@ function compareOrders(order1, order2)
 }
 
 /**
+ * Private helper function that will return the JSON provided for
+ * a given CREST market query.
+ *
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders
+ */
+function getMarketJson(itemId, regionId, orderType)
+{
+  var marketData = null;
+
+  // Validate incoming arguments
+  if (itemId == null || typeof(itemId) != "number")
+  {
+    marketData = "Invalid Item ID";
+  }
+  else if (regionId == null || typeof(regionId) != "number")
+  {
+    marketData = "Invalid Region ID";
+  }
+  else if (orderType == null || typeof(orderType) != "string" || orderType.toLowerCase() != 'sell' && orderType.toLowerCase() != 'buy')
+  {
+    marketData = "Invalid order type";
+  }
+  else
+  {
+    orderType = orderType.toLowerCase();
+    
+    // Setup variables for the market endpoint we want
+    var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
+    var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
+    Logger.log("Pulling market orders from url: " + marketUrl + typeUrl)
+    
+    try
+    {
+      // Make the call to get some market data
+      marketData = JSON.parse(fetchUrl(marketUrl + typeUrl));
+    }
+    catch (unknownError)
+    {
+      Logger.log(unknownError);
+      var addressError = "Address unavailable:";
+      if (unknownError.message.slice(0, addressError.length) == addressError)
+      {
+        var maxRetries = 3;
+        
+        // See if we can try again
+        if (retries <= maxRetries)
+        {
+          retries++;
+          marketData = getMarketJson(itemId, regionId, orderType); 
+        }
+        else
+        {
+          marketData = "";
+          for (i in unknownError)
+          {
+            marketData += i + ": " + unknownError[i] + "\n";
+          }
+        }
+      }
+      else
+      {
+        marketData = "";
+        for (i in unknownError)
+        {
+          marketData += i + ": " + unknownError[i] + "\n";
+        }
+      }
+    }
+  }
+
+  return marketData;
+}
+
+/**
  * Returns the market price for a given item.
  *
  * @param {itemId} itemId the item ID of the product to look up
@@ -59,62 +135,22 @@ function compareOrders(order1, order2)
  */
 function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
-  try
+  var returnPrice = 0;
+
+  if (stationId == null || typeof(stationId) != "number")
   {
-    var returnPrice = 0;
-
-    // Validate incoming arguments
-    if (itemId == null || typeof(itemId) != "number")
-    {
-      returnPrice = "Invalid Item ID";
-    }
-    else if (regionId == null || typeof(regionId) != "number")
-    {
-      returnPrice = "Invalid Region ID";
-    }
-    else if (stationId == null || typeof(stationId) != "number")
-    {
-      returnPrice = "Invalid Station ID";
-    }
-    else if (orderType == null || typeof(orderType) != "string")
-    {
-      returnPrice = "Invalid order type";
-    }
-    else
-    {
-      orderType = orderType.toLowerCase();
-
-      // Setup variables for the market endpoint we want
-      var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-      var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
-
-      // Make the call to get some market data
-      var jsonMarket = JSON.parse(fetchUrl(marketUrl + typeUrl));
-      returnPrice = getPrice(jsonMarket, stationId, orderType)
-    }
+    returnPrice = "Invalid Station ID";
   }
-  catch (unknownError)
+  else
   {
-    Logger.log(unknownError);
-    var addressError = "Address unavailable:";
-    if (unknownError.message.slice(0, addressError.length) == addressError)
+    var jsonMarket = getMarketJson(itemId, regionId, orderType);
+    if (typeof(jsonMarket) == "string")
     {
-      var maxRetries = 3;
-
-      // See if we can try again
-      if (retries <= maxRetries)
-      {
-        retries++;
-        returnPrice = getMarketPrice(itemId, regionId, stationId, orderType, refresh); 
-      }
-      else
-      {
-        returnPrice = "";
-        for (i in unknownError)
-        {
-          returnPrice += i + ": " + unknownError[i] + "\n";
-        }
-      }
+      returnPrice = jsonMarket;
+    }
+    else if (jsonMarket != null)
+    {
+      returnPrice = getPrice(jsonMarket, stationId, orderType)
     }
   }
 
@@ -137,44 +173,37 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
 {
   var returnValues = [];
 
-  try
+  // Only validate arguments within the context of this function
+  // Further validation will occur inside getMarketPrice
+  if (itemIdList == null || typeof(itemIdList) != "object")
   {
-    // Only validate arguments within the context of this function
-    // Further validation will occur inside getMarketPrice
-    if (itemIdList == null || typeof(itemIdList) != "object")
+    returnValues = "Invalid Item list";
+  }
+  else
+  {
+    for (var itemIndex = 0; itemIndex < itemIdList.length; itemIndex++)
     {
-      returnValues = "Invalid Item list";
-    }
-    else
-    {
-      for (var itemIndex = 0; itemIndex < itemIdList.length; itemIndex++)
+      var itemId = itemIdList[itemIndex];
+      if (typeof(itemId) == "object")
       {
-        var itemId = itemIdList[itemIndex];
-        if (typeof(itemId) == "object")
+        // This needs to be fixed before passing to getMarketPrice() function
+        if (itemId.length == 1)
         {
-          // This needs to be fixed before passing to getMarketPrice() function
-          if (itemId.length == 1)
-          {
-            // This is only a number
-            itemId = Number(itemId);
-          }
-        }
-
-        // Make sure to handle blank cells accordingly
-        if (itemId > 0)
-        {
-          returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType)
-        }
-        else
-        {
-          returnValues[itemIndex] = "";
+          // This is only a number
+          itemId = Number(itemId);
         }
       }
+      
+      // Make sure to handle blank cells accordingly
+      if (itemId > 0)
+      {
+        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType)
+      }
+      else
+      {
+        returnValues[itemIndex] = "";
+      }
     }
-  }
-  catch (error)
-  {
-    returnValues = "Error received = " + error.message;
   }
 
   return returnValues;
@@ -191,96 +220,46 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
  */
 function getOrders(itemId, regionId, orderType, refresh)
 {
-  try
+  var marketReturn = [];
+  
+  if (orderType != 'sell')
   {
-    var marketReturn = [];
-
-    // Validate incoming arguments
-    if (itemId == null || typeof(itemId) != "number")
-    {
-      marketReturn = "Invalid Item ID";
-    }
-    else if (regionId == null || typeof(regionId) != "number")
-    {
-      marketReturn = "Invalid Region ID";
-    }
-    else if (orderType == null || typeof(orderType) != "string")
-    {
-      marketReturn = "Invalid order type";
-    }
-    else
-    {
-      orderType = orderType.toLowerCase();
-
-      if (orderType != 'sell')
-      {
-        marketReturn = "Invalid order type";
-      }
-      else
-      {
-        // Setup variables for the market endpoint we want
-        var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-        var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
-        Logger.log('Calling URL: ' + marketUrl + typeUrl);
-
-        // Make the call to get some market data
-        var jsonMarket = JSON.parse(fetchUrl(marketUrl + typeUrl));
-        var marketItems = jsonMarket['items'];
-
-        // Convert to an array for proper output
-        marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
-        for (var rowKey in marketItems)
-        {
-          var rowData = marketItems[rowKey];
-          var newRow = [];
-          for (var colKey in rowData)
-          {
-            if (colKey == 'issued')
-            {
-              var dateValues = rowData[colKey].split(/[T-]/);
-              var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
-              Logger.log("Converting date string: " + dateString);
-              newRow.push(new Date(dateString));
-            }
-            else if (colKey == 'price' || colKey == 'volume')
-            {
-              newRow.push(rowData[colKey]);
-            }
-            else if (colKey == 'location')
-            {
-              var locationData = rowData[colKey];
-              newRow.push(locationData['name']);
-            }
-          }
-          marketReturn.push(newRow);
-        }
-        marketReturn.sort(compareOrders);
-      }
-    }
+    marketReturn = "Invalid order type";
   }
-  catch (unknownError)
+  else
   {
-    Logger.log(unknownError);
-    var addressError = "Address unavailable:";
-    if (unknownError.message.slice(0, addressError.length) == addressError)
+    // Make the call to get some market data
+    var jsonMarket = getMarketJson(itemId, regionId, orderType);
+    var marketItems = jsonMarket['items'];
+    
+    // Convert to an array for proper output
+    marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
+    for (var rowKey in marketItems)
     {
-      var maxRetries = 3;
-
-      // See if we can try again
-      if (retries <= maxRetries)
+      var rowData = marketItems[rowKey];
+      var newRow = [];
+      for (var colKey in rowData)
       {
-        retries++;
-        marketReturn = getOrders(itemId, regionId, orderType, refresh); 
-      }
-      else
-      {
-        marketReturn = "";
-        for (i in unknownError)
+        if (colKey == 'issued')
         {
-          marketReturn += i + ": " + unknownError[i] + "\n";
+          var dateValues = rowData[colKey].split(/[T-]/);
+          var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
+          Logger.log("Converting date string: " + dateString);
+          newRow.push(new Date(dateString));
+        }
+        else if (colKey == 'price' || colKey == 'volume')
+        {
+          newRow.push(rowData[colKey]);
+        }
+        else if (colKey == 'location')
+        {
+          var locationData = rowData[colKey];
+          newRow.push(locationData['name']);
         }
       }
+      marketReturn.push(newRow);
     }
+    marketReturn.sort(compareOrders);
   }
 
   SpreadsheetApp.flush();
