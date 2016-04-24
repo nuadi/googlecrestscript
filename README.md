@@ -100,7 +100,7 @@ If any cell would be overwritten, the function will fail with a #REF! error, so 
 
 ## getOrdersAdv
 
-This function requires a 2D array of options that is 2 columns wide and at least 3 rows high. Setup a range of cells like the following
+This function requires a 2D array of options that is 2 columns wide and at least 3 rows high. The options can be in any order. Setup a range of cells like the following
 
 | | A | B
 |---|:--|--:
@@ -125,7 +125,7 @@ The available options are shown in the table below. All option keys are case sen
 | showOrderId | no | Set to TRUE, or 1, to add a new column named "Order ID" that will contain each order's ID.
 | showStationId | no | Set to TRUE, or 1, to add a new column named "Station ID" that will contain the ID of the station the order is placed within.
 | sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
-| sortOrder | no | Number value for sort order. 1 = Normal order, -1 = Reverse order
+| sortOrder | no | Number value for sort order. 1 = Normal order (default for sell), -1 = Reverse order (default for buy)
 | stationId | no | Specify a specific station ID to show only orders from that station. Only 1 value supported at this time.
 | refresh | no | Same as all refresh parameters. Never used. Can be any deterministic value.
 
