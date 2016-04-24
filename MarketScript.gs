@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4d
+// version 4e
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -7,7 +7,7 @@
 // Global variable needed to track number of retries attempted
 var retries = 0;
 // Global variables used in order comparison function and set by
-// Advanced Orders function. Default is the Price column.
+// Advanced Orders function. Default is the Price column in ascending order.
 var sortIndex = 1;
 var sortOrder = 1;
 
@@ -115,7 +115,7 @@ function getMarketJson(itemId, regionId, orderType)
       else
       {
         marketData = "";
-        for (i in unknownError)
+        for (var i in unknownError)
         {
           marketData += i + ": " + unknownError[i] + "\n";
         }
@@ -223,52 +223,14 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
  */
 function getOrders(itemId, regionId, orderType, refresh)
 {
-  var marketReturn = [];
-  marketReturn.push(['Issued', 'Price', 'Volume', 'Location']);
+  var orderOptions = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['orderType', orderType],
+    ['refresh', refresh]
+  ];
   
-  if (orderType != 'sell')
-  {
-    throw new Error("Invalid order type");
-  }
-  else
-  {
-    // Make the call to get some market data
-    var jsonMarket = getMarketJson(itemId, regionId, orderType);
-    var marketItems = jsonMarket['items'];
-    
-    // Convert to an array for proper output
-    var outputArray = [];
-    for (var rowKey in marketItems)
-    {
-      var rowData = marketItems[rowKey];
-      var newRow = [];
-      for (var colKey in rowData)
-      {
-        if (colKey == 'issued')
-        {
-          var dateValues = rowData[colKey].split(/[T-]/);
-          var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
-          Logger.log("Converting date string: " + dateString);
-          newRow.push(new Date(dateString));
-        }
-        else if (colKey == 'price' || colKey == 'volume')
-        {
-          newRow.push(rowData[colKey]);
-        }
-        else if (colKey == 'location')
-        {
-          var locationData = rowData[colKey];
-          newRow.push(locationData['name']);
-        }
-      }
-      outputArray.push(newRow);
-    }
-    outputArray.sort(compareOrders);
-    marketReturn = marketReturn.concat(outputArray);
-  }
-
-  SpreadsheetApp.flush();
-  return marketReturn;
+  return getOrdersAdv(orderOptions);
 }
 
 /**
@@ -279,11 +241,13 @@ function getOrders(itemId, regionId, orderType, refresh)
  */
 function getOrdersAdv(options)
 {
-  var marketReturn = [];
-
   var itemId = null;
   var regionId = null;
   var orderType = null;
+  var refresh = null;
+  var showOrderId = false;
+  var showStationId = false;
+  var stationId = null;
 
   if (options.length <= 0)
   {
@@ -312,6 +276,14 @@ function getOrdersAdv(options)
       {
         orderType = optionValue;
       }
+      else if (optionKey == 'showOrderId')
+      {
+        showOrderId = optionValue;
+      }
+      else if (optionKey == 'showStationId')
+      {
+        showStationId = optionValue;
+      }
       else if (optionKey == 'sortIndex')
       {
         sortIndex = optionValue;
@@ -319,6 +291,10 @@ function getOrdersAdv(options)
       else if (optionKey == 'sortOrder')
       {
         sortOrder = optionValue;
+      }
+      else if (optionKey == 'stationId' && optionValue != '')
+      {
+        stationId = optionValue;
       }
     }
   }
@@ -336,7 +312,86 @@ function getOrdersAdv(options)
     throw new Error('No "orderType" option found');
   }
 
-  marketReturn = getOrders(itemId, regionId, orderType);
+  var headers = ['Issued', 'Price', 'Volume', 'Location'];
+  var orderIdColumn, stationIdColumn;
+  if (showStationId == true)
+  {
+    stationIdColumn = headers.length;
+    headers.push('Station ID');
+  }
+  if (showOrderId == true)
+  {
+    orderIdColumn = headers.length;
+    headers.push('Order ID');
+  }
+
+  var marketReturn = [];
+  marketReturn.push(headers);
+  
+  if (orderType != 'sell')
+  {
+    throw new Error("Invalid order type");
+  }
+  else
+  {
+    // Make the call to get all market data for this item
+    var jsonMarket = getMarketJson(itemId, regionId, orderType);
+    var marketItems = jsonMarket['items'];
+    
+    // Convert all data to an array for proper output
+    var outputArray = [];
+    for (var rowKey in marketItems)
+    {
+      var saveRow = true;
+      var rowData = marketItems[rowKey];
+      var newRow = [];
+      for (var colKey in rowData)
+      {
+        if (colKey == 'id' && showOrderId == true)
+        {
+          newRow[orderIdColumn] = rowData[colKey];
+        }
+        else if (colKey == 'issued')
+        {
+          var dateValues = rowData[colKey].split(/[T-]/);
+          var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
+          Logger.log("Converting date string: " + dateString);
+          newRow[0] = new Date(dateString);
+        }
+        else if (colKey == 'price')
+        {
+          newRow[1] = rowData[colKey];
+        }
+        else if (colKey == 'volume')
+        {
+          newRow[2] = rowData[colKey];
+        }
+        else if (colKey == 'location')
+        {
+          var locationData = rowData[colKey];
+          newRow[3] = locationData['name'];
+
+          if (stationId != null && stationId != locationData['id'])
+          {
+            saveRow = false;
+            break;
+          }
+
+          if (showStationId == true)
+          {
+            newRow[stationIdColumn] = locationData['id'];
+          }
+        }
+      }
+
+      if (saveRow)
+      {
+        outputArray.push(newRow);
+      }
+    }
+    outputArray.sort(compareOrders);
+    marketReturn = marketReturn.concat(outputArray);
+  }
 
   return marketReturn;
 }
