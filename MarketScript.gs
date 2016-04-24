@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4e
+// version 4f
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -312,8 +312,17 @@ function getOrdersAdv(options)
     throw new Error('No "orderType" option found');
   }
 
-  var headers = ['Issued', 'Price', 'Volume', 'Location'];
-  var orderIdColumn, stationIdColumn;
+  var headers = ['Issued', 'Price', 'Volume'];
+  var locationColumn, minVolumeColumn, orderIdColumn, rangeColumn, stationIdColumn;
+  if (orderType == 'buy')
+  {
+    minVolumeColumn = headers.length;
+    headers.push('Min Volume');
+    rangeColumn = headers.length;
+    headers.push('Range');
+  }
+  locationColumn = headers.length;
+  headers.push('Location');
   if (showStationId == true)
   {
     stationIdColumn = headers.length;
@@ -328,70 +337,71 @@ function getOrdersAdv(options)
   var marketReturn = [];
   marketReturn.push(headers);
   
-  if (orderType != 'sell')
+  // Make the call to get all market data for this item
+  var jsonMarket = getMarketJson(itemId, regionId, orderType);
+  var marketItems = jsonMarket['items'];
+  
+  // Convert all data to an array for proper output
+  var outputArray = [];
+  for (var rowKey in marketItems)
   {
-    throw new Error("Invalid order type");
-  }
-  else
-  {
-    // Make the call to get all market data for this item
-    var jsonMarket = getMarketJson(itemId, regionId, orderType);
-    var marketItems = jsonMarket['items'];
-    
-    // Convert all data to an array for proper output
-    var outputArray = [];
-    for (var rowKey in marketItems)
+    var saveRow = true;
+    var rowData = marketItems[rowKey];
+    var newRow = [];
+    for (var colKey in rowData)
     {
-      var saveRow = true;
-      var rowData = marketItems[rowKey];
-      var newRow = [];
-      for (var colKey in rowData)
+      if (colKey == 'id' && showOrderId == true)
       {
-        if (colKey == 'id' && showOrderId == true)
-        {
-          newRow[orderIdColumn] = rowData[colKey];
-        }
-        else if (colKey == 'issued')
-        {
-          var dateValues = rowData[colKey].split(/[T-]/);
-          var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
-          Logger.log("Converting date string: " + dateString);
-          newRow[0] = new Date(dateString);
-        }
-        else if (colKey == 'price')
-        {
-          newRow[1] = rowData[colKey];
-        }
-        else if (colKey == 'volume')
-        {
-          newRow[2] = rowData[colKey];
-        }
-        else if (colKey == 'location')
-        {
-          var locationData = rowData[colKey];
-          newRow[3] = locationData['name'];
-
-          if (stationId != null && stationId != locationData['id'])
-          {
-            saveRow = false;
-            break;
-          }
-
-          if (showStationId == true)
-          {
-            newRow[stationIdColumn] = locationData['id'];
-          }
-        }
+        newRow[orderIdColumn] = rowData[colKey];
       }
-
-      if (saveRow)
+      else if (colKey == 'issued')
       {
-        outputArray.push(newRow);
+        var dateValues = rowData[colKey].split(/[T-]/);
+        var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
+        Logger.log("Converting date string: " + dateString);
+        newRow[0] = new Date(dateString);
+      }
+      else if (colKey == 'minVolume' && orderType == 'buy')
+      {
+        newRow[minVolumeColumn] = rowData[colKey];
+      }
+      else if (colKey == 'price')
+      {
+        newRow[1] = rowData[colKey];
+      }
+      else if (colKey == 'range' && orderType == 'buy')
+      {
+        newRow[rangeColumn] = rowData[colKey];
+      }
+      else if (colKey == 'volume')
+      {
+        newRow[2] = rowData[colKey];
+      }
+      else if (colKey == 'location')
+      {
+        var locationData = rowData[colKey];
+        newRow[locationColumn] = locationData['name'];
+
+        if (stationId != null && stationId != locationData['id'])
+        {
+          saveRow = false;
+          break;
+        }
+
+        if (showStationId == true)
+        {
+          newRow[stationIdColumn] = locationData['id'];
+        }
       }
     }
-    outputArray.sort(compareOrders);
-    marketReturn = marketReturn.concat(outputArray);
+
+    if (saveRow)
+    {
+      outputArray.push(newRow);
+    }
   }
+  outputArray.sort(compareOrders);
+  marketReturn = marketReturn.concat(outputArray);
 
   return marketReturn;
 }
