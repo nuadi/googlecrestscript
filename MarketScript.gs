@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4f
+// version 4g
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -229,6 +229,11 @@ function getOrders(itemId, regionId, orderType, refresh)
     ['orderType', orderType],
     ['refresh', refresh]
   ];
+
+  if (orderType == 'buy')
+  {
+    orderOptions.push(['sortOrder', -1]);
+  }
   
   return getOrdersAdv(orderOptions);
 }
@@ -249,6 +254,8 @@ function getOrdersAdv(options)
   var showStationId = false;
   var stationId = null;
 
+  var sortOrderSet = false;
+
   if (options.length <= 0)
   {
     throw new Error("No options found");
@@ -264,7 +271,11 @@ function getOrdersAdv(options)
     {
       var optionKey = options[row][col];
       var optionValue = options[row][++col];
-      if (optionKey == 'itemId')
+      if (optionValue == '')
+      {
+        continue;
+      }
+      else if (optionKey == 'itemId')
       {
         itemId = optionValue;
       }
@@ -291,8 +302,9 @@ function getOrdersAdv(options)
       else if (optionKey == 'sortOrder')
       {
         sortOrder = optionValue;
+        sortOrderSet = true;
       }
-      else if (optionKey == 'stationId' && optionValue != '')
+      else if (optionKey == 'stationId')
       {
         stationId = optionValue;
       }
@@ -310,6 +322,11 @@ function getOrdersAdv(options)
   else if (orderType == null)
   {
     throw new Error('No "orderType" option found');
+  }
+
+  if (sortOrderSet == false && orderType == 'buy')
+  {
+    sortOrder = -1;
   }
 
   var headers = ['Issued', 'Price', 'Volume'];
