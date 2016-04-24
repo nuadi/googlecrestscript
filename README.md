@@ -122,9 +122,12 @@ The available options are shown in the table below. All option keys are case sen
 | itemId | Yes | The ID of the item to look for. Must be a number value.
 | regionId | Yes | The region ID to look in. Must be a number value.
 | orderType | Yes | The order types to return. Must be "sell". Will add "buy" at a later date.
-| sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location
+| showOrderId | no | Set to TRUE, or 1, to add a new column named "Order ID" that will contain each order's ID.
+| showStationId | no | Set to TRUE, or 1, to add a new column named "Station ID" that will contain the ID of the station the order is placed within.
+| sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
 | sortOrder | no | Number value for sort order. 1 = Normal order, -1 = Reverse order
-| Refresh | no | Same as all refresh parameters. Never used. Can be any deterministic value.
+| stationId | no | Specify a specific station ID to show only orders from that station. Only 1 value supported at this time.
+| refresh | no | Same as all refresh parameters. Never used. Can be any deterministic value.
 
 # Troubleshooting
 
