@@ -18,7 +18,7 @@ GCS contains the following custom functions
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
-* **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region. Note: It only supports sell orders at this time.
+* **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
 
 # Setup and Configuration
@@ -121,7 +121,7 @@ The available options are shown in the table below. All option keys are case sen
 |:--|---|:--
 | itemId | Yes | The ID of the item to look for. Must be a number value.
 | regionId | Yes | The region ID to look in. Must be a number value.
-| orderType | Yes | The order types to return. Must be "sell". Will add "buy" at a later date.
+| orderType | Yes | The order types to return. Must be "sell" or "buy".
 | showOrderId | no | Set to TRUE, or 1, to add a new column named "Order ID" that will contain each order's ID.
 | showStationId | no | Set to TRUE, or 1, to add a new column named "Station ID" that will contain the ID of the station the order is placed within.
 | sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
