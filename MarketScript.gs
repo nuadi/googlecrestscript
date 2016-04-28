@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4g
+// version 4h
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -80,8 +80,8 @@ function getMarketJson(itemId, regionId, orderType)
     orderType = orderType.toLowerCase();
     
     // Setup variables for the market endpoint we want
-    var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-    var typeUrl = "?type=https://public-crest.eveonline.com/types/" + itemId + "/";
+    var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
+    var typeUrl = "?type=https://crest-tq.eveonline.com/types/" + itemId + "/";
     Logger.log("Pulling market orders from url: " + marketUrl + typeUrl)
     
     try
@@ -496,7 +496,7 @@ function getMarketHistory(itemId, regionId, property)
   else
   { 
     // Setup variables for the market endpoint we want
-    var marketUrl = "https://public-crest.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
+    var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
   
     // Make the call to get some market data
     var jsonMarket = JSON.parse(fetchUrl(marketUrl));
