@@ -190,4 +190,6 @@ Reddit (best method): /u/nuadi
 
 Twitter: @nuadibantine
 
+In-game: Message Nuadi (CEO of Fem Bot Industries), or join the channel "Fembot Pub"
+
 If you have a GitHub account, feel free to create issues, feature requests, etc.
