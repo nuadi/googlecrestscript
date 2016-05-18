@@ -1,15 +1,15 @@
 # Google CREST Script (GCS)
-GCS is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the Market endpoint inside EVE Online's CREST web service.
+GCS is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST web service.
 
 # Contents
 
+1. [Features](#features)
 1. [Setup and Configuration](#setup-and-configuration)
-2. [Features](#features)
-2. [Custom Function Use](#custom-function-use)
-5. [Examples](#examples)
-3. [Troubleshooting](#troubleshooting)
-4. [Known Issues](#known-issues)
-4. [Questions, Comments, Feedback](#questions-comments-feedback)
+1. [Custom Function Use](#custom-function-use)
+1. [Examples](#examples)
+1. [Troubleshooting](#troubleshooting)
+1. [Known Issues](#known-issues)
+1. [Questions, Comments, Feedback](#questions-comments-feedback)
 
 # Features
 
@@ -17,6 +17,7 @@ GCS contains the following custom functions
 
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
+* **getHistoryAdv**: This function returns all of the historical data for a given item in a given region. See [Examples](#examples) for more detail.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
@@ -122,12 +123,38 @@ The available options are shown in the table below. All option keys are case sen
 | itemId | Yes | The ID of the item to look for. Must be a number value.
 | regionId | Yes | The region ID to look in. Must be a number value.
 | orderType | Yes | The order types to return. Must be "sell" or "buy".
+| headers | no | Set to FALSE to hide the headers. Default is TRUE.
 | showOrderId | no | Set to TRUE, or 1, to add a new column named "Order ID" that will contain each order's ID.
 | showStationId | no | Set to TRUE, or 1, to add a new column named "Station ID" that will contain the ID of the station the order is placed within.
 | sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
 | sortOrder | no | Number value for sort order. 1 = Normal order (default for sell), -1 = Reverse order (default for buy)
 | stationId | no | Specify a specific station ID to show only orders from that station. Only 1 value supported at this time.
 | refresh | no | Same as all refresh parameters. Never used. Can be any deterministic value.
+
+## getHistoryAdv
+
+This function requires a 2D array of options that is 2 columns wide and at least 2 rows high. The options can be in any order. Setup a range of cells like the following
+
+| | A | B
+|---|:--|--:
+|1| itemId | 29668
+|2| regionId | 10000002
+|3| sortIndex | 0
+|4| sortOrder | -1
+
+and your function call will look like this
+
+    =getHistoryAdv(A1:B4)
+
+The available options are shown in the table below. All option keys are case sensitive.
+
+| Option Key | Required? | Description
+|:--|---|:--
+| itemId | Yes | The ID of the item to look for. Must be a number value.
+| regionId | Yes | The region ID to look in. Must be a number value.
+| headers | no | Set to FALSE to hide the headers. Default is TRUE.
+| sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
+| sortOrder | no | Number value for sort order. 1 = Normal order (default for sell), -1 = Reverse order (default for buy)
 
 # Troubleshooting
 
