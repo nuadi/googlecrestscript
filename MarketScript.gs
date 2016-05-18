@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-// version 4h
+var version = '5a'
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -10,6 +10,7 @@ var retries = 0;
 // Advanced Orders function. Default is the Price column in ascending order.
 var sortIndex = 1;
 var sortOrder = 1;
+
 
 /**
  * Private helper function that is used to initialize the refresh token
@@ -33,6 +34,25 @@ function initializeGetMarketPrice()
   Logger.log(price);
 }
 
+
+/**
+ * Historical data comparator
+ */
+function compareHistory(history1, history2)
+{
+  var comparison = 0;
+  if (history1[sortIndex] < history2[sortIndex])
+  {
+    comparison = -1;
+  }
+  else if (history1[sortIndex] > history2[sortIndex])
+  {
+    comparison = 1;
+  }
+  return comparison * sortOrder;
+}
+
+
 /**
  * Private helper method that will compare two market orders.
  */
@@ -49,6 +69,165 @@ function compareOrders(order1, order2)
   }
   return comparison * sortOrder;
 }
+
+
+/**
+ * Return all historical data using the options provided.
+ *
+ * @param {options} options see README in GitHub repo.
+ * @customfunction
+ */
+function getHistoryAdv(options)
+{
+  var itemId = null;
+  var regionId = null;
+  var showHeaders = true;
+
+  sortIndex = 0;
+  sortOrder = -1;
+
+  if (options.length <= 0)
+  {
+    throw new Error("No options found");
+  }
+  else if (options[0] == null || options[0].length < 2)
+  {
+    throw new Error("Options must have 2 columns");
+  }
+
+  for (var row = 0; row < options.length; row++)
+  {
+    for (var col = 0; col < options[row].length; col++)
+    {
+      var optionKey = options[row][col];
+      var optionValue = options[row][++col];
+      if (optionValue === '')
+      {
+        continue;
+      }
+      else if (optionKey == 'headers')
+      {
+        showHeaders = optionValue;
+      }
+      else if (optionKey == 'itemId')
+      {
+        itemId = optionValue;
+      }
+      else if (optionKey == 'regionId')
+      {
+        regionId = optionValue;
+      }
+      else if (optionKey == 'sortIndex')
+      {
+        sortIndex = optionValue;
+      }
+      else if (optionKey == 'sortOrder')
+      {
+        sortOrder = optionValue;
+      }
+    }
+  }
+
+  if (itemId == null)
+  {
+    throw new Error('No "itemId" option found');
+  }
+  else if (regionId == null)
+  {
+    throw new Error('No "regionId" option found');
+  }
+
+  var historyReturn = [];
+
+  var headers = ['Date', 'Volume', 'Orders', 'Low', 'High', 'Average'];
+
+  if (showHeaders == true)
+  {
+    historyReturn.push(headers);
+  }
+
+  var historyEndpoint = "https://crest-tq.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/";
+  var historyJson = JSON.parse(fetchUrl(historyEndpoint));
+
+  var historicalData = historyJson['items'];
+
+  var history = [];
+  for (var itemIndex in historicalData)
+  {
+    var historicalItem = historicalData[itemIndex];
+    var newRow = [];
+    for (var name in historicalItem)
+    {
+      var historyValue = historicalItem[name];
+      if (name == 'date')
+      {
+        var dateValues = historyValue.split(/[T-]/);
+        var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
+        Logger.log('Converting date (' + historyValue + ') string: ' + dateString);
+        newRow[0] = new Date(dateString);
+      }
+      else if (name == 'volume')
+      {
+        newRow[1] = historyValue;
+      }
+      else if (name == 'orderCount')
+      {
+        newRow[2] = historyValue;
+      }
+      else if (name == 'lowPrice')
+      {
+        newRow[3] = historyValue;
+      }
+      else if (name == 'highPrice')
+      {
+        newRow[4] = historyValue;
+      }
+      else if (name == 'avgPrice')
+      {
+        newRow[5] = historyValue;
+      }
+    }
+    history.push(newRow);
+  }
+
+  history.sort(compareHistory);
+  historyReturn = historyReturn.concat(history);
+  return historyReturn;
+}
+
+
+/**
+ * Returns yesterdays market history for a given item.
+ *
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {column} column the name of the historical column you are trying to access; "orderCount", "lowPrice", "highPrice", "avgPrice", "volume"
+ * @customfunction
+ */
+function getMarketHistory(itemId, regionId, column)
+{
+  var propIndices = {
+    'volume': 1,
+    'orderCount': 2,
+    'lowPrice': 3,
+    'highPrice': 4,
+    'avgPrice': 5
+  };
+
+  if (!propIndices[column] > 0)
+  {
+    throw new Error('Invalid column name.');
+  }
+
+  var options = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['property', propIndices[column]],
+    ['headers', false]
+  ];
+  return getHistoryAdv(options)[0][propIndices[column]];
+}
+
 
 /**
  * Private helper function that will return the JSON provided for
@@ -126,6 +305,7 @@ function getMarketJson(itemId, regionId, orderType)
   return marketData;
 }
 
+
 /**
  * Returns the market price for a given item.
  *
@@ -138,28 +318,35 @@ function getMarketJson(itemId, regionId, orderType)
  */
 function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
-  var returnPrice = 0;
+  var orderOptions = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['stationId', stationId],
+    ['orderType', orderType.toLowerCase()],
+    ['refresh', refresh],
+    ['headers', false]
+  ];
 
-  if (stationId == null || typeof(stationId) != "number")
+  if (orderType.toLowerCase() == 'buy')
   {
-    throw new Error("Invalid Station ID");
+    orderOptions.push(['sortOrder', -1]);
   }
-  else
-  {
-    var jsonMarket = getMarketJson(itemId, regionId, orderType);
-    if (typeof(jsonMarket) == "string")
-    {
-      returnPrice = jsonMarket;
-    }
-    else if (jsonMarket != null)
-    {
-      returnPrice = getPrice(jsonMarket, stationId, orderType)
-    }
-  }
+  
+  var orderData = getOrdersAdv(orderOptions);
 
+  if (orderData == null)
+  {
+    throw new Error('Order data came back NULL');
+  }
+  else if (orderData.length <= 0 || orderData[0] == null)
+  {
+    orderData.push(['', 0]);
+  }
+  
   SpreadsheetApp.flush();
-  return returnPrice;
+  return orderData[0][1];
 }
+
 
 /**
  * Custom function that returns an array of prices for a given array
@@ -200,7 +387,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
       // Make sure to handle blank cells accordingly
       if (itemId > 0)
       {
-        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType)
+        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType.toLowerCase())
       }
       else
       {
@@ -211,6 +398,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
 
   return returnValues;
 }
+
 
 /**
  * Return all market orders for an item from a region.
@@ -226,17 +414,18 @@ function getOrders(itemId, regionId, orderType, refresh)
   var orderOptions = [
     ['itemId', itemId],
     ['regionId', regionId],
-    ['orderType', orderType],
+    ['orderType', orderType.toLowerCase()],
     ['refresh', refresh]
   ];
 
-  if (orderType == 'buy')
+  if (orderType.toLowerCase() == 'buy')
   {
     orderOptions.push(['sortOrder', -1]);
   }
   
   return getOrdersAdv(orderOptions);
 }
+
 
 /**
  * Advanced version of getOrders.
@@ -250,6 +439,7 @@ function getOrdersAdv(options)
   var regionId = null;
   var orderType = null;
   var refresh = null;
+  var showHeaders = true;
   var showOrderId = false;
   var showStationId = false;
   var stationId = null;
@@ -260,7 +450,7 @@ function getOrdersAdv(options)
   {
     throw new Error("No options found");
   }
-  else if (options[0].length < 2)
+  else if (options[0] == null || options[0].length < 2)
   {
     throw new Error("Options must have 2 columns");
   }
@@ -271,9 +461,13 @@ function getOrdersAdv(options)
     {
       var optionKey = options[row][col];
       var optionValue = options[row][++col];
-      if (optionValue == '')
+      if (optionValue === '')
       {
         continue;
+      }
+      else if (optionKey == 'headers')
+      {
+        showHeaders = optionValue;
       }
       else if (optionKey == 'itemId')
       {
@@ -285,7 +479,7 @@ function getOrdersAdv(options)
       }
       else if (optionKey == 'orderType')
       {
-        orderType = optionValue;
+        orderType = optionValue.toLowerCase();
       }
       else if (optionKey == 'showOrderId')
       {
@@ -352,7 +546,11 @@ function getOrdersAdv(options)
   }
 
   var marketReturn = [];
-  marketReturn.push(headers);
+
+  if (showHeaders == true)
+  {
+    marketReturn.push(headers);
+  }
   
   // Make the call to get all market data for this item
   var jsonMarket = getMarketJson(itemId, regionId, orderType);
@@ -375,7 +573,7 @@ function getOrdersAdv(options)
       {
         var dateValues = rowData[colKey].split(/[T-]/);
         var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
-        Logger.log("Converting date string: " + dateString);
+        //Logger.log("Converting date string: " + dateString);
         newRow[0] = new Date(dateString);
       }
       else if (colKey == 'minVolume' && orderType == 'buy')
@@ -423,90 +621,6 @@ function getOrdersAdv(options)
   return marketReturn;
 }
 
-/**
- * Private helper method that will determine the best price for a given item from the
- * market data provided.
- *
- * @param {jsonMarket} jsonMarket the market data in JSON format
- * @param {stationId} stationId the station ID to focus the search on
- * @param {orderType} orderType the type of order is either "sell" or "buy"
- */
-function getPrice(jsonMarket, stationId, orderType)
-{
-  var bestPrice = 0;
-
-  // Pull all orders found and start iteration
-  var orders = jsonMarket['items'];
-  for (var orderIndex = 0; orderIndex < orders.length; orderIndex++)
-  {
-    var order = orders[orderIndex];
-    if (stationId == order['location']['id'])
-    {
-      // This is the station market we want
-      var price = order['price'];
-
-      if (bestPrice > 0)
-      {
-        // We have a price from a previous iteration
-        if (orderType == "sell" && price < bestPrice)
-        {
-          bestPrice = price;
-        }
-        else if (orderType == "buy" && price > bestPrice)
-        {
-          bestPrice = price;
-        }
-      }
-      else
-      {
-        // This is the first price found, take it
-        bestPrice = price;
-      }
-    }
-  }
-
-  return bestPrice;
-}
-
-/**
- * Returns yesterdays market history for a given item.
- *
- * @param {itemId} itemId the item ID of the product to look up
- * @param {regionId} regionId the region ID for the market to look up
- * @param {property} property the property you are trying to access; "orderCount", "lowPrice", "highPrice", "avgPrice", "volume"
- * @customfunction
- */
-function getMarketHistory(itemId, regionId, property)
-{
-  var history = 0;
-  
-  // Validate incoming arguments
-  if (itemId == null || typeof(itemId) != "number")
-  {
-    throw new Error("Invalid Item ID");
-  }
-  else if (regionId == null || typeof(regionId) != "number")
-  {
-    throw new Error("Invalid Region ID");
-  }
-  else if (property != "orderCount" && property != "lowPrice" && property != "highPrice" && property != "avgPrice" && property != "volume")
-  {
-    throw new Error("Property must be one of: 'orderCount', 'lowPrice', 'highPrice', 'avgPrice', 'volume'");
-  }
-  else
-  { 
-    // Setup variables for the market endpoint we want
-    var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/"
-  
-    // Make the call to get some market data
-    var jsonMarket = JSON.parse(fetchUrl(marketUrl));
-  
-    // Get the desired property
-    var items = jsonMarket['items'];
-    var history = items[items.length - 1][property]
-  }
-  return history;
-}
 
 /**
  * Private helper method that wraps the UrlFetchApp in a semaphore
@@ -519,7 +633,7 @@ function fetchUrl(url)
 {
   var lock = LockService.getUserLock().tryLock(1000/150);
   // Make the service call
-  headers = {"User-Agent": "Google Crest Script version 4b (/u/nuadi @Reddit.com)"}
+  headers = {"User-Agent": "Google Crest Script version " + version + " (/u/nuadi @Reddit.com)"}
   params = {"headers": headers}
   httpResponse = UrlFetchApp.fetch(url, params);
   
