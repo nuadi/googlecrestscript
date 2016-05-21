@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '5a'
+var version = '5b'
 // /u/nuadi @ Reddit
 //
 // LICENSE: Use at your own risk, and fly safe.
@@ -79,6 +79,7 @@ function compareOrders(order1, order2)
  */
 function getHistoryAdv(options)
 {
+  var days = null;
   var itemId = null;
   var regionId = null;
   var showHeaders = true;
@@ -104,6 +105,10 @@ function getHistoryAdv(options)
       if (optionValue === '')
       {
         continue;
+      }
+      else if (optionKey == 'days')
+      {
+        days = optionValue;
       }
       else if (optionKey == 'headers')
       {
@@ -146,6 +151,14 @@ function getHistoryAdv(options)
     historyReturn.push(headers);
   }
 
+  var cuttoffDate = null;
+  if (days != null)
+  {
+    var rightNow = new Date();
+    var utcTimestamp = Date.UTC(rightNow.getUTCFullYear(), rightNow.getUTCMonth(), rightNow.getUTCDate());
+    cuttoffDate = utcTimestamp - days*24*60*60*1000;
+  }
+
   var historyEndpoint = "https://crest-tq.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/";
   var historyJson = JSON.parse(fetchUrl(historyEndpoint));
 
@@ -156,6 +169,7 @@ function getHistoryAdv(options)
   {
     var historicalItem = historicalData[itemIndex];
     var newRow = [];
+    var saveRow = true;
     for (var name in historicalItem)
     {
       var historyValue = historicalItem[name];
@@ -165,6 +179,12 @@ function getHistoryAdv(options)
         var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
         Logger.log('Converting date (' + historyValue + ') string: ' + dateString);
         newRow[0] = new Date(dateString);
+
+        if (cuttoffDate != null && cuttoffDate > newRow[0].getTime())
+        {
+          saveRow = false;
+          break;
+        }
       }
       else if (name == 'volume')
       {
@@ -187,7 +207,11 @@ function getHistoryAdv(options)
         newRow[5] = historyValue;
       }
     }
-    history.push(newRow);
+
+    if (saveRow)
+    {
+      history.push(newRow);
+    }
   }
 
   history.sort(compareHistory);
@@ -242,9 +266,13 @@ function getMarketJson(itemId, regionId, orderType)
   var marketData = null;
 
   // Validate incoming arguments
-  if (itemId == null || typeof(itemId) != "number")
+  if (itemId == null)
   {
-    throw new Error("Invalid Item ID");
+    throw new Error("Item ID cannot be NULL.");
+  }
+  else if (typeof(itemId) != "number")
+  {
+    throw new Error('Item ID must be a number. Instead found a(n) ' + typeof(itemId) + '.');
   }
   else if (regionId == null || typeof(regionId) != "number")
   {
@@ -631,7 +659,7 @@ function getOrdersAdv(options)
  */
 function fetchUrl(url)
 {
-  var lock = LockService.getUserLock().tryLock(1000/150);
+  var lock = LockService.getUserLock().tryLock(1000);
   // Make the service call
   headers = {"User-Agent": "Google Crest Script version " + version + " (/u/nuadi @Reddit.com)"}
   params = {"headers": headers}
@@ -641,24 +669,4 @@ function fetchUrl(url)
     LockService.getUserLock().releaseLock();
 
   return httpResponse;
-}
-
-/**
- * Private helper method that is used to examine function execution
- * in an effort to optimize performance.
- */
-function profileGetMarketPrice(itemId, regionId, stationId, orderType, refresh)
-{
-  var startTime = new Date().getTime();
-  var price = getMarketPrice(itemId, regionId, stationId, orderType, refresh);
-  var endTime = new Date().getTime();
-
-  if (typeof(price) == 'number')
-  {
-    return endTime - startTime;
-  }
-  else
-  {
-    return price;
-  }
 }
