@@ -160,8 +160,9 @@ The available options are shown in the table below. All option keys are case sen
 |:--|---|:--
 | itemId | Yes | The ID of the item to look for. Must be a number value.
 | regionId | Yes | The region ID to look in. Must be a number value.
+| days | no | Only return a given number of days. Default will return all historical data.
 | headers | no | Set to FALSE to hide the headers. Default is TRUE.
-| sortIndex | no | Numver value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
+| sortIndex | no | Number value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
 | sortOrder | no | Number value for sort order. 1 = Normal order (default for sell), -1 = Reverse order (default for buy)
 
 # Troubleshooting
