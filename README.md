@@ -24,7 +24,15 @@ GCS contains the following custom functions
 
 # Setup and Configuration
 
-1. Create a Google Spreadsheet, if you don't have one already, and go to Tools > Script Editor.
+## Example Spreadsheet
+
+You can find an example spreadsheet here: [GCS Example](https://docs.google.com/spreadsheets/d/12QlphSOb-5xkukTeUlmM9I2pAFi48dXFLS5OIMA7DyY).
+
+Once you have it open, got to `File -> Make a Copy...` and then name the new file what ever you like. This spreadsheet contains examples of how to use all of the available functions, along with the script already copied into the editor.
+
+## Initialization
+
+1. Create a Google Spreadsheet, or copy the example above, and then go to Tools > Script Editor.
 2. Copy the contents of MarketScript.gs into the editor window and save the script. You may need to name the project to save it, so use any name.
 3. At the top of the Script Editor window, select the initializeGetMarketPrice function from the drop-down list (where it says Select Function), and then hit the Run button (Play button) to the left.
 4. Authorize the script to make contact with external services. This are required for the UrlFetchApp.
