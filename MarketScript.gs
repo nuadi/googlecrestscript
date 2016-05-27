@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '6a'
+var version = '6b'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -85,7 +85,7 @@ function fetchUrl(url)
  */
 function gcsGetLock()
 {
-  var NLocks = 100;
+  var NLocks = 150;
   var lock = false;
   while (!lock)
   {
@@ -97,11 +97,6 @@ function gcsGetLock()
         lock = true;
         break;
       }
-    }
-
-    if (!lock)
-    {
-      Utilities.sleep(100);
     }
   }
   return lock;
@@ -251,7 +246,7 @@ function getHistoryAdv(options)
     }
   }
 
-  history.sort(compareHistory);
+  history.sort(basicCompare);
   historyReturn = historyReturn.concat(history);
   return historyReturn;
 }
