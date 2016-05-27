@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '6b'
+var version = '6c'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -282,6 +282,44 @@ function getMarketHistory(itemId, regionId, column)
     ['headers', false]
   ];
   return getHistoryAdv(options)[0][propIndices[column]];
+}
+
+
+/**
+ * Returns a list of all items found on the market along with their corresponding item ID.
+ *
+ * @param {refresh} refresh Force Google to refresh function return.
+ * @customfunction
+ */
+function getMarketItems(refresh)
+{
+  var marketItemsEndpoint = 'https://crest-tq.eveonline.com/market/types/';
+  var marketItemsResponse = JSON.parse(fetchUrl(marketItemsEndpoint));
+
+  var totalPages = marketItemsResponse['pageCount'];
+
+  var itemList = [];
+  var headers = ['Item Name', 'ID'];
+  itemList.push(headers);
+
+  for (var currentPage = 1; currentPage <= totalPages; currentPage++)
+  {
+    Logger.log('Processing page ' + currentPage);
+    var marketItems = marketItemsResponse['items'];
+    for (var itemReference in marketItems)
+    {
+      var item = marketItems[itemReference];
+      itemList.push([item['type']['name'], item['id']]);
+    }
+
+    if (currentPage < totalPages)
+    {
+      var nextEndpoint = marketItemsResponse['next']['href'];
+      marketItemsResponse = JSON.parse(fetchUrl(nextEndpoint));
+    }
+  }
+
+  return itemList;
 }
 
 
