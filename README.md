@@ -15,12 +15,18 @@ GCS is a Google Code script designed for use in Google Sheets. It provides custo
 
 GCS contains the following custom functions
 
+## Market Functions
+
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 * **getHistoryAdv**: This function returns all of the historical data for a given item in a given region. See [Examples](#examples) for more detail.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
+
+## Universe Functions
+
+* **getRegions**: This function will return a list of all regions in the universe along with their corresponding region ID. There are no arguments to this function.
 
 # Setup and Configuration
 
