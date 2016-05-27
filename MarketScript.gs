@@ -1,6 +1,7 @@
 // Google Crest Script (GCS)
-var version = '5b'
+var version = '6a'
 // /u/nuadi @ Reddit
+// @nuadibantine (Twitter)
 //
 // LICENSE: Use at your own risk, and fly safe.
 
@@ -36,16 +37,16 @@ function initializeGetMarketPrice()
 
 
 /**
- * Historical data comparator
+ * Private helper method that performs a basic comparison of two objects.
  */
-function compareHistory(history1, history2)
+function basicCompare(object1, object2)
 {
   var comparison = 0;
-  if (history1[sortIndex] < history2[sortIndex])
+  if (object1[sortIndex] < object2[sortIndex])
   {
     comparison = -1;
   }
-  else if (history1[sortIndex] > history2[sortIndex])
+  else if (object1[sortIndex] > object2[sortIndex])
   {
     comparison = 1;
   }
@@ -54,20 +55,56 @@ function compareHistory(history1, history2)
 
 
 /**
- * Private helper method that will compare two market orders.
+ * Private helper method that wraps the UrlFetchApp in a semaphore
+ * to prevent service overload.
+ *
+ * @param {url} url The URL to contact
+ * @param {options} options The fetch options to utilize in the request
  */
-function compareOrders(order1, order2)
+function fetchUrl(url)
 {
-  var comparison = 0;
-  if (order1[sortIndex] < order2[sortIndex])
+  if (gcsGetLock())
   {
-    comparison = -1;
+    // Make the service call
+    headers = {"User-Agent": "Google Crest Script version " + version + " (/u/nuadi @Reddit.com)"}
+    params = {"headers": headers}
+    httpResponse = UrlFetchApp.fetch(url, params);
   }
-  else if (order1[sortIndex] > order2[sortIndex])
+    
+  return httpResponse;
+}
+
+
+/**
+ * Custom implementation of a semaphore after LockService failed to support GCS properly.
+ * Hopefully this works a bit longer...
+ *
+ * This function searches through N semaphores, until it finds one that is not defined.
+ * Once it finds one, that n-th semaphore is set to TRUE and the function returns.
+ * If no semaphore is open, the function sleeps 0.1 seconds before trying again.
+ */
+function gcsGetLock()
+{
+  var NLocks = 100;
+  var lock = false;
+  while (!lock)
   {
-    comparison = 1;
+    for (var nLock = 0; nLock < NLocks; nLock++)
+    {
+      if (CacheService.getDocumentCache().get('GCSLock' + nLock) == null)
+      {
+        CacheService.getDocumentCache().put('GCSLock' + nLock, true, 1)
+        lock = true;
+        break;
+      }
+    }
+
+    if (!lock)
+    {
+      Utilities.sleep(100);
+    }
   }
-  return comparison * sortOrder;
+  return lock;
 }
 
 
@@ -643,7 +680,7 @@ function getOrdersAdv(options)
       outputArray.push(newRow);
     }
   }
-  outputArray.sort(compareOrders);
+  outputArray.sort(basicCompare);
   marketReturn = marketReturn.concat(outputArray);
 
   return marketReturn;
@@ -651,22 +688,22 @@ function getOrdersAdv(options)
 
 
 /**
- * Private helper method that wraps the UrlFetchApp in a semaphore
- * to prevent service overload.
+ * Returns a list of all regions and their IDs.
  *
- * @param {url} url The URL to contact
- * @param {options} options The fetch options to utilize in the request
+ * @customfunction
  */
-function fetchUrl(url)
+function getRegions()
 {
-  var lock = LockService.getUserLock().tryLock(1000);
-  // Make the service call
-  headers = {"User-Agent": "Google Crest Script version " + version + " (/u/nuadi @Reddit.com)"}
-  params = {"headers": headers}
-  httpResponse = UrlFetchApp.fetch(url, params);
-  
-  if (lock)
-    LockService.getUserLock().releaseLock();
-
-  return httpResponse;
+  var regionsEndpoint = 'https://crest-tq.eveonline.com/regions/';
+  var regionsData = JSON.parse(fetchUrl(regionsEndpoint));
+  var regionItems = regionsData['items'];
+  var regionList = [];
+  var headers = ['Name', 'ID'];
+  regionList.push(headers);
+  for (var rowKey in regionItems)
+  {
+    var region = regionItems[rowKey];
+    regionList.push([region['name'], region['id']]);
+  }
+  return regionList;
 }
