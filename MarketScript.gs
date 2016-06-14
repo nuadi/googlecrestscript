@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '7a'
+var version = '7b'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -42,13 +42,16 @@ function initializeGetMarketPrice()
 function basicCompare(object1, object2)
 {
   var comparison = 0;
-  if (object1[sortIndex] < object2[sortIndex])
+  if (object1[sortIndex] != null && object2[sortIndex] != null)
   {
-    comparison = -1;
-  }
-  else if (object1[sortIndex] > object2[sortIndex])
-  {
-    comparison = 1;
+    if (object1[sortIndex] < object2[sortIndex])
+    {
+      comparison = -1;
+    }
+    else if (object1[sortIndex] > object2[sortIndex])
+    {
+      comparison = 1;
+    }
   }
   return comparison * sortOrder;
 }
@@ -100,6 +103,64 @@ function gcsGetLock()
     }
   }
   return lock;
+}
+
+
+/**
+ * Returns the average daily volume traded for a given item
+ * in a given region in a given number of days.
+ * @param {regionId} regionId the region to look at historical data
+ * @param {itemId} itemId the item traded
+ * @param {days} days the number of days to consider
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @customfunction
+ */
+function getAverageDailyOrders(regionId, itemId, days, refresh)
+{
+  var options = [
+    ['days', days],
+    ['headers', false],
+    ['itemId', itemId],
+    ['refresh', refresh],
+    ['regionId', regionId]
+  ];
+  var historicalData = getHistoryAdv(options);
+
+  var totalOrders = 0;
+  for (var rowNumber = 0; rowNumber < historicalData.length; rowNumber++)
+  {
+    totalOrders += historicalData[rowNumber][2];
+  }
+  return totalOrders / days;
+}
+
+
+/**
+ * Returns the average daily volume traded for a given item
+ * in a given region in a given number of days.
+ * @param {regionId} regionId the region to look at historical data
+ * @param {itemId} itemId the item traded
+ * @param {days} days the number of days to consider
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @customfunction
+ */
+function getAverageDailyVolume(regionId, itemId, days, refresh)
+{
+  var options = [
+    ['days', days],
+    ['headers', false],
+    ['itemId', itemId],
+    ['refresh', refresh],
+    ['regionId', regionId]
+  ];
+  var historicalData = getHistoryAdv(options);
+
+  var totalVolume = 0;
+  for (var rowNumber = 0; rowNumber < historicalData.length; rowNumber++)
+  {
+    totalVolume += historicalData[rowNumber][1];
+  }
+  return totalVolume / days;
 }
 
 
@@ -288,7 +349,7 @@ function getMarketHistory(itemId, regionId, column)
 /**
  * Returns a list of all items found on the market along with their corresponding item ID.
  *
- * @param {refresh} refresh Force Google to refresh function return.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
  * @customfunction
  */
 function getMarketItems(refresh)
@@ -348,9 +409,17 @@ function getMarketJson(itemId, regionId, orderType)
   {
     throw new Error("Invalid Region ID");
   }
-  else if (orderType == null || typeof(orderType) != "string" || orderType.toLowerCase() != 'sell' && orderType.toLowerCase() != 'buy')
+  else if (orderType == null)
   {
-    throw new Error("Invalid order type");
+    throw new Error("Order type cannot be NULL.");
+  }
+  else if (typeof(orderType) != "string")
+  {
+    throw new Error('Order type must be a STRING value.');
+  }
+  else if (orderType.toLowerCase() != 'sell' && orderType.toLowerCase() != 'buy')
+  {
+    throw new Error('Order type must be set to "sell" or "buy".');
   }
   else
   {
@@ -527,7 +596,7 @@ function getOrders(itemId, regionId, orderType, refresh)
 /**
  * Advanced version of getOrders.
  *
- * @param {options} See README in GitHub repo.
+ * @param {options} options See README in GitHub repo.
  * @customfunction
  */
 function getOrdersAdv(options)
@@ -762,9 +831,10 @@ function getRegionMarketPrice(itemId, regionId, orderType, refresh)
 /**
  * Returns a list of all regions and their IDs.
  *
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
  * @customfunction
  */
-function getRegions()
+function getRegions(refresh)
 {
   var regionsEndpoint = 'https://crest-tq.eveonline.com/regions/';
   var regionsData = JSON.parse(fetchUrl(regionsEndpoint));
@@ -820,4 +890,28 @@ function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh)
   
   SpreadsheetApp.flush();
   return orderData[0][1];
+}
+
+
+/**
+ * This function will run when the spreadsheet loads and perform the following:
+ * 1) Request the current version from Github and inform the user of new versions
+ */
+function onOpen()
+{
+  var versionEndpoint = 'https://raw.githubusercontent.com/nuadi/googlecrestscript/master/version';
+  var newVersion = fetchUrl(versionEndpoint);
+
+  if (newVersion != null)
+  {
+    newVersion = newVersion.getContentText().trim();
+    Logger.log('Current version from Github: ' + newVersion);
+
+    if (newVersion > version)
+    {
+      var message = 'A new version of GCS is available at https://github.com/nuadi/googlecrestscript';
+      var title = 'GCS version ' + newVersion + ' available!';
+      SpreadsheetApp.getActiveSpreadsheet().toast(message, title, 120);
+    }
+  }
 }
