@@ -412,7 +412,6 @@ function getMarketJson(itemId, regionId, orderType)
  * @param {stationId} stationId the station ID for the market to focus on
  * @param {orderType} orderType this should be set to "sell" or "buy" orders
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
- * @customfunction
  */
 function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
