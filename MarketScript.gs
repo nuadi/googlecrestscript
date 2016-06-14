@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '6c'
+var version = '7a'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -358,7 +358,7 @@ function getMarketJson(itemId, regionId, orderType)
     
     // Setup variables for the market endpoint we want
     var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-    var typeUrl = "?type=https://crest-tq.eveonline.com/types/" + itemId + "/";
+    var typeUrl = "?type=https://crest-tq.eveonline.com/inventory/types/" + itemId + "/";
     Logger.log("Pulling market orders from url: " + marketUrl + typeUrl)
     
     try
@@ -721,6 +721,46 @@ function getOrdersAdv(options)
 
 
 /**
+ * Returns the market price for a given item over an entire region.
+ *
+ * @param {itemId} itemId the item ID of the product to look up.
+ * @param {regionId} regionId the region ID for the market to look up.
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getRegionMarketPrice(itemId, regionId, orderType, refresh)
+{
+  var orderOptions = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['orderType', orderType.toLowerCase()],
+    ['refresh', refresh],
+    ['headers', false]
+  ];
+
+  if (orderType.toLowerCase() == 'buy')
+  {
+    orderOptions.push(['sortOrder', -1]);
+  }
+  
+  var orderData = getOrdersAdv(orderOptions);
+
+  if (orderData == null)
+  {
+    throw new Error('Order data came back NULL');
+  }
+  else if (orderData.length <= 0 || orderData[0] == null)
+  {
+    orderData.push(['', 0]);
+  }
+  
+  SpreadsheetApp.flush();
+  return orderData[0][1];
+}
+
+
+/**
  * Returns a list of all regions and their IDs.
  *
  * @customfunction
@@ -739,4 +779,46 @@ function getRegions()
     regionList.push([region['name'], region['id']]);
   }
   return regionList;
+}
+
+
+/**
+ * Returns the market price for a given item over an entire region.
+ *
+ * @param {itemId} itemId the item ID of the product to look up.
+ * @param {regionId} regionId the region ID for the market to look up.
+ * @param {stationId} stationId the station ID for the market to look up.
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh)
+{
+  var orderOptions = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['stationId', stationId],
+    ['orderType', orderType.toLowerCase()],
+    ['refresh', refresh],
+    ['headers', false]
+  ];
+
+  if (orderType.toLowerCase() == 'buy')
+  {
+    orderOptions.push(['sortOrder', -1]);
+  }
+  
+  var orderData = getOrdersAdv(orderOptions);
+
+  if (orderData == null)
+  {
+    throw new Error('Order data came back NULL');
+  }
+  else if (orderData.length <= 0 || orderData[0] == null)
+  {
+    orderData.push(['', 0]);
+  }
+  
+  SpreadsheetApp.flush();
+  return orderData[0][1];
 }
