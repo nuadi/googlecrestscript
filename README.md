@@ -17,7 +17,9 @@ GCS contains the following custom functions
 
 ## Market Functions
 
-* **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station.
+* **getRegionMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region.
+* **getStationMarketPrice**: This is like `getRegionMarketPrice` but will filter down to a specific station.
+* **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station. **DEPRECATED:** While this function will be accessible at the moment, it will be removed in a future version. You should refactor your sheets to use one of `getRegion|StationMarketPrice` as appropriate.
 * **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
 * **getHistoryAdv**: This function returns all of the historical data for a given item in a given region. See [Examples](#examples) for more detail.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
@@ -53,7 +55,7 @@ Once you have it open, got to `File -> Make a Copy...` and then name the new fil
 
 # Custom Function Use
 
-The getMarketPrice() method is built as a Custom Function for use in cells of Google Sheets. The JavaDoc comment is setup so that you can see what each parameter is used for as you type in the function inside a cell. Here are some tips to keep in mind.
+The getStationMarketPrice() method is built as a Custom Function for use in cells of Google Sheets. The JavaDoc comment is setup so that you can see what each parameter is used for as you type in the function inside a cell. Here are some tips to keep in mind.
 
 The return value is the price for that item at a given station based on the order type that you want. If the value is "sell" then you will be given the lowest sell price for the product. If it is "buy" then you will get the highest buy order price for the product. If no orders can be found at that station, then the return price is 0.
 
@@ -81,11 +83,11 @@ The return value is the price for that item at a given station based on the orde
 
 # Examples
 
-## getMarketPrice
+## getStationMarketPrice
 
 Your formula should look something like this:
 
-    =getMarketPrice(29668, 10000032, 60011866, "sell", 1)
+    =getStationMarketPrice(29668, 10000032, 60011866, "sell", 1)
 
 * 29668 : whatever item ID of the product you want prices for, in this case it's PLEX
 * 10000032 : the region ID for the market of interest, in this case it's Sinq Laison
@@ -108,7 +110,7 @@ Your formula should look something like this:
 
     =getOrders(29668, 10000032, "sell", 1)
 
-See the getMarketPrice for a description of these parameters.
+See the getStationMarketPrice for a description of these parameters.
 
 This function will return a 2D array 4 columns wide and an unknown number of rows high which will populate a sheet starting with the cell you called the function in, and then proceed to the right and down the sheet. The four columns have headers, and are titled Issued, Price, Volume, and Location. The rows are automatically sorted by price, lowest to highest.
 
