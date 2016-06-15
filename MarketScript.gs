@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '7b'
+var version = '7c'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -252,8 +252,9 @@ function getHistoryAdv(options)
     cuttoffDate = utcTimestamp - days*24*60*60*1000;
   }
 
-  var historyEndpoint = "https://crest-tq.eveonline.com/market/" + regionId + "/types/" + itemId + "/history/";
-  var historyJson = JSON.parse(fetchUrl(historyEndpoint));
+  var historyEndpoint = 'https://crest-tq.eveonline.com/market/' + regionId + '/history/';
+  var typeUrl = "?type=https://crest-tq.eveonline.com/inventory/types/" + itemId + "/";
+  var historyJson = JSON.parse(fetchUrl(historyEndpoint + typeUrl));
 
   var historicalData = historyJson['items'];
 
