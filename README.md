@@ -15,21 +15,34 @@ GCS is a Google Code script designed for use in Google Sheets. It provides custo
 
 GCS contains the following custom functions
 
-## Market Functions
+## Market Price Functions
 
 * **getRegionMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region.
 * **getStationMarketPrice**: This is like `getRegionMarketPrice` but will filter down to a specific station.
-* **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station. **DEPRECATED:** While this function will be accessible at the moment, it will be removed in a future version. You should refactor your sheets to use one of `getRegion|StationMarketPrice` as appropriate.
-* **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
-* **getHistoryAdv**: This function returns all of the historical data for a given item in a given region. See [Examples](#examples) for more detail.
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
+
+## Market History Functions
+
+* **getMarketHistory**: This function returns a specific column value from the historical data (as seen in-game) for an item from a given region.
+* **getHistoryAdv**: This function returns all of the historical data for a given item in a given region. See [Examples](#examples) for more detail.
+* **getAverageDailyOrders**: This is a convenience function that will calculate the average daily number or orders observed in a given number of days in the historical data.
+* **getAverageDailyVolume**: This is a convenience function that will calculate the average daily trade volume observed in a given number of days in the historical data.
+
+## Market Utility Functions
+
 * **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument.
 
 ## Universe Functions
 
 * **getRegions**: This function will return a list of all regions in the universe along with their corresponding region ID. There are no arguments to this function.
+
+## Depricated Functions
+
+These functions will be removed in a future version of GCS. Please update your sheets to use the replacement functions listed.
+
+* **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station. **REPLACEMENT:** Replace all uses of this function with `getStationMarketPrice` to maintain functionality.
 
 # Setup and Configuration
 
