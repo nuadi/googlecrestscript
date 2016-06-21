@@ -22,6 +22,8 @@ GCS contains the following custom functions
 * **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
+* **countStationOrders**: This function returns the number of available orders for a given item at a station.
+* **countStationVolume**: This function sums up the total number of available units for a given item at a station.
 
 ## Market History Functions
 
@@ -34,9 +36,17 @@ GCS contains the following custom functions
 
 * **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument.
 
+## Industry Functions
+* **getAdjustedPrice**: Returns the adjusted price for an item used in industrial calculations.
+* **getCostIndex**: Returns the cost index for a given activity in a given solar system.
+
 ## Universe Functions
 
 * **getRegions**: This function will return a list of all regions in the universe along with their corresponding region ID. There are no arguments to this function.
+
+## Utility Functions
+
+* **getItemVolume**: Returns the volume for a given item. Note: This is the assembled volume. There is no way to return the packaged volume.
 
 ## Depricated Functions
 
@@ -186,6 +196,17 @@ The available options are shown in the table below. All option keys are case sen
 | headers | no | Set to FALSE to hide the headers. Default is TRUE.
 | sortIndex | no | Number value for the column to sort. 0 = Location, 1 = Price (default), 2 = Volume, 3 = Location, and so on.
 | sortOrder | no | Number value for sort order. 1 = Normal order (default for sell), -1 = Reverse order (default for buy)
+
+## Filters
+
+Many of the market functions support an optional filters parameter. This parameter accepts a 2D array of key-value pairs in the same style as getOrdersAdv above. The filters can be passed directly into getOrdersAdv. The available options are
+
+| Filter Key | Description
+|---|:--
+|maxPrice| This will filter all orders above a given price
+|minPrice| This will filter all orders below a given price
+|maxVolume| This will filter all orders above a given volume
+|minVolume| This will filter all orders below a given volume
 
 # Troubleshooting
 
