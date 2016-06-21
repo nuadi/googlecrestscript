@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '7c'
+var version = '7d'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -900,6 +900,16 @@ function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh)
  */
 function onOpen()
 {
+  var submenus = [{name: 'Check for updates', functionName: 'versionCheck'}];
+  SpreadsheetApp.getActiveSpreadsheet().addMenu("GCS", submenus);
+}
+
+
+/**
+ * Private helper function that will check for a new version of GCS.
+ */
+function versionCheck()
+{
   var versionEndpoint = 'https://raw.githubusercontent.com/nuadi/googlecrestscript/master/version';
   var newVersion = fetchUrl(versionEndpoint);
 
@@ -908,11 +918,13 @@ function onOpen()
     newVersion = newVersion.getContentText().trim();
     Logger.log('Current version from Github: ' + newVersion);
 
+    var message = 'You are using the latest version of GCS. Fly safe. o7';
+    var title = 'No updates found';
     if (newVersion > version)
     {
-      var message = 'A new version of GCS is available at https://github.com/nuadi/googlecrestscript';
-      var title = 'GCS version ' + newVersion + ' available!';
-      SpreadsheetApp.getActiveSpreadsheet().toast(message, title, 120);
+      message = 'A new version of GCS is available on GitHub.';
+      title = 'GCS version ' + newVersion + ' available!';
     }
+    SpreadsheetApp.getActiveSpreadsheet().toast(message, title, 120);
   }
 }
