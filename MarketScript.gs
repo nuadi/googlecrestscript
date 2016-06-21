@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '8a'
+var version = '8b'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -741,7 +741,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh,
  * @param {filters} filters (Optional) An array of filters to place on orders during processing.
  * @customfunction
  */
-function getOrders(itemId, regionId, orderType, refresh)
+function getOrders(itemId, regionId, orderType, refresh, filters)
 {
   var orderOptions = [
     ['itemId', itemId],
