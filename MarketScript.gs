@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '7d'
+var version = '8a'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -58,6 +58,65 @@ function basicCompare(object1, object2)
 
 
 /**
+ * Count the number of available orders for a given item in a station for a given order type.
+ * @param {itemId} itemId the item ID of the product to look up.
+ * @param {regionId} regionId the region ID for the market to look up.
+ * @param {stationId} stationId the station ID for the market to look up.
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function countStationOrders(itemId, regionId, stationId, orderType, refresh)
+{
+  var ordersNumber = 0;
+
+  var options = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['stationId', stationId],
+    ['headers', false],
+    ['orderType', orderType],
+    ['refresh', refresh]
+  ];
+  
+  var orders = getOrdersAdv(options);
+  return orders.length;
+}
+
+
+/**
+ * Count the number of available units for a given item in a station for a given order type.
+ * @param {itemId} itemId the item ID of the product to look up.
+ * @param {regionId} regionId the region ID for the market to look up.
+ * @param {stationId} stationId the station ID for the market to look up.
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function countStationVolume(itemId, regionId, stationId, orderType, refresh)
+{
+  var ordersNumber = 0;
+
+  var options = [
+    ['itemId', itemId],
+    ['regionId', regionId],
+    ['stationId', stationId],
+    ['headers', false],
+    ['orderType', orderType],
+    ['refresh', refresh]
+  ];
+  
+  var availableVolume = 0;
+  var orders = getOrdersAdv(options);
+  for (var row = 0; row < orders.length; row++)
+  {
+    availableVolume += orders[row][2];
+  }
+  return availableVolume;
+}
+
+
+/**
  * Private helper method that wraps the UrlFetchApp in a semaphore
  * to prevent service overload.
  *
@@ -103,6 +162,42 @@ function gcsGetLock()
     }
   }
   return lock;
+}
+
+
+/**
+ * Returns the adjusted price used for industrial calculations.
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @customfunction
+ */
+function getAdjustedPrice(itemId, refresh)
+{
+  var dataKey = itemId + 'adjustedPrice' + refresh;
+  var adjustedPrice = CacheService.getDocumentCache().get(dataKey);
+  if (adjustedPrice == null)
+  {
+    var sixHours = 60 * 60 * 6; // in seconds
+    var marketPriceEndpoint = 'https://crest-tq.eveonline.com/market/prices/';
+    var marketPriceData = JSON.parse(fetchUrl(marketPriceEndpoint));
+    var itemPrices = marketPriceData['items'];
+    for (var row = 0; row < itemPrices.length; row++)
+    {
+      var itemPriceData = itemPrices[row];
+      if (itemId == itemPriceData['type']['id'])
+      {
+        adjustedPrice = itemPriceData['adjustedPrice'];
+        CacheService.getDocumentCache().put(dataKey, adjustedPrice, sixHours);
+        break;
+      }
+    }
+  }
+  else
+  {
+    adjustedPrice = Number(adjustedPrice);
+  }
+
+  return adjustedPrice;
 }
 
 
@@ -161,6 +256,56 @@ function getAverageDailyVolume(regionId, itemId, days, refresh)
     totalVolume += historicalData[rowNumber][1];
   }
   return totalVolume / days;
+}
+
+
+/**
+ * Returns the cost index for a given activity in a given solar system.
+ * @param {systemName} systemName the name of the solar system
+ * @param {activity} activity the name of the activity to look up. Can be "Invention", "Manufacturing", "Researching Time Efficiency", "Researching Material Efficiency", or "Copying".
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getCostIndex(systemName, activity, refresh)
+{
+  var dataKey = systemName + activity + 'costIndex' + refresh;
+  var costIndex = CacheService.getDocumentCache().get(dataKey);
+  if (costIndex == null)
+  {
+    var sixHours = 60 * 60 * 6; // in seconds
+    var industrySystemsEndpoint = 'https://crest-tq.eveonline.com/industry/systems/';
+    var industrySystemsData = JSON.parse(fetchUrl(industrySystemsEndpoint));
+    var costIndices = industrySystemsData['items'];
+    for (var row = 0; row < costIndices.length; row++)
+    {
+      var costIndexData = costIndices[row];
+      if (systemName == costIndexData['solarSystem']['name'])
+      {
+        //return 'name found';
+        var systemIndices = costIndexData['systemCostIndices'];
+        for (var arow = 0; arow < systemIndices.length; arow++)
+        {
+          var activityData = systemIndices[arow];
+          if (activity == activityData['activityName'])
+          {
+            costIndex = activityData['costIndex'];
+            CacheService.getDocumentCache().put(dataKey, costIndex, sixHours);
+            break;
+          }
+        }
+        if (costIndex != null)
+        {
+          break;
+        }
+      }
+    }
+  }
+  else
+  {
+    costIndex = Number(costIndex);
+  }
+
+  return costIndex;
 }
 
 
@@ -311,6 +456,50 @@ function getHistoryAdv(options)
   history.sort(basicCompare);
   historyReturn = historyReturn.concat(history);
   return historyReturn;
+}
+
+
+/**
+ * Private helper function that will return all information for a given item.
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ */
+function getItemInfo(itemId, refresh)
+{
+  var itemDataArray = [];
+  var itemData = getItemJson(itemId, refresh);
+  for (var key in itemData)
+  {
+    var newRow = [key, itemData[key]];
+    itemDataArray.push(newRow);
+  }
+  return itemDataArray;
+}
+
+
+/**
+ * Private helper function that will pull all information for a given item from CREST.
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ */
+function getItemJson(itemId, refresh)
+{
+  var itemEndpoint = 'https://crest-tq.eveonline.com/inventory/types/' + itemId + '/';
+  var itemData = JSON.parse(fetchUrl(itemEndpoint));
+  return itemData;
+}
+
+
+/**
+ * Returns the volume (assembled only) for a given item ID.
+ * @param {itemId} itemId the item ID of the product to look up
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getItemVolume(itemId, refresh)
+{
+  var itemData = getItemJson(itemId, refresh);
+  return itemData['volume'];
 }
 
 
@@ -485,33 +674,7 @@ function getMarketJson(itemId, regionId, orderType)
  */
 function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
-  var orderOptions = [
-    ['itemId', itemId],
-    ['regionId', regionId],
-    ['stationId', stationId],
-    ['orderType', orderType.toLowerCase()],
-    ['refresh', refresh],
-    ['headers', false]
-  ];
-
-  if (orderType.toLowerCase() == 'buy')
-  {
-    orderOptions.push(['sortOrder', -1]);
-  }
-  
-  var orderData = getOrdersAdv(orderOptions);
-
-  if (orderData == null)
-  {
-    throw new Error('Order data came back NULL');
-  }
-  else if (orderData.length <= 0 || orderData[0] == null)
-  {
-    orderData.push(['', 0]);
-  }
-  
-  SpreadsheetApp.flush();
-  return orderData[0][1];
+  return getStationMarketPrice(itemId, regionId, stationId, orderType, refresh);
 }
 
 
@@ -524,9 +687,10 @@ function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
  * @param {stationId} stationId the station ID for the market to focus on
  * @param {orderType} orderType this should be set to "sell" or "buy" orders
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @param {filters} filters (Optional) An array of filters to place on orders during processing.
  * @customfunction
  */
-function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
+function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh, filters)
 {
   var returnValues = [];
 
@@ -554,7 +718,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
       // Make sure to handle blank cells accordingly
       if (itemId > 0)
       {
-        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType.toLowerCase())
+        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType.toLowerCase(), refresh, filters)
       }
       else
       {
@@ -574,6 +738,7 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
  * @param {regionId} regionId the region ID for the market to look up
  * @param {orderType} orderType this should be set to "sell" or "buy" orders
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @param {filters} filters (Optional) An array of filters to place on orders during processing.
  * @customfunction
  */
 function getOrders(itemId, regionId, orderType, refresh)
@@ -584,6 +749,21 @@ function getOrders(itemId, regionId, orderType, refresh)
     ['orderType', orderType.toLowerCase()],
     ['refresh', refresh]
   ];
+  
+  if (filters != null)
+  {
+    for (var row = 0; row < filters.length; row++)
+    {
+      if (filters[row].length > 1)
+      {
+        orderOptions.push(filters[row]);
+      }
+      else
+      {
+        orderOptions.push(filters);
+      }
+    }
+  }
 
   if (orderType.toLowerCase() == 'buy')
   {
@@ -610,6 +790,10 @@ function getOrdersAdv(options)
   var showOrderId = false;
   var showStationId = false;
   var stationId = null;
+  var minPrice = null;
+  var maxPrice = null;
+  var minVolume = null;
+  var maxVolume = null;
 
   var sortOrderSet = false;
 
@@ -668,6 +852,22 @@ function getOrdersAdv(options)
       else if (optionKey == 'stationId')
       {
         stationId = optionValue;
+      }
+      else if (optionKey == 'minPrice')
+      {
+        minPrice = optionValue;
+      }
+      else if (optionKey == 'maxPrice')
+      {
+        maxPrice = optionValue;
+      }
+      else if (optionKey == 'minVolume')
+      {
+        minVolume = optionValue;
+      }
+      else if (optionKey == 'maxVolume')
+      {
+        maxVolume = optionValue;
       }
     }
   }
@@ -749,7 +949,16 @@ function getOrdersAdv(options)
       }
       else if (colKey == 'price')
       {
-        newRow[1] = rowData[colKey];
+        var orderPrice = rowData[colKey];
+        if (minPrice != null && orderPrice < minPrice)
+        {
+          saveRow = false;
+        }
+        if (maxPrice != null && orderPrice > maxPrice)
+        {
+          saveRow = false;
+        }
+        newRow[1] = orderPrice;
       }
       else if (colKey == 'range' && orderType == 'buy')
       {
@@ -757,7 +966,17 @@ function getOrdersAdv(options)
       }
       else if (colKey == 'volume')
       {
-        newRow[2] = rowData[colKey];
+        var orderVolume = rowData[colKey];
+        if (minVolume != null && orderVolume < minVolume)
+        {
+          saveRow = false;
+        }
+        if (maxVolume != null && orderVolume > maxVolume)
+        {
+          saveRow = false;
+        }
+        
+        newRow[2] = orderVolume;
       }
       else if (colKey == 'location')
       {
@@ -796,9 +1015,10 @@ function getOrdersAdv(options)
  * @param {regionId} regionId the region ID for the market to look up.
  * @param {orderType} orderType this should be set to "sell" or "buy" orders.
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @param {filters} filters (Optional) An array of filters to place on orders during processing.
  * @customfunction
  */
-function getRegionMarketPrice(itemId, regionId, orderType, refresh)
+function getRegionMarketPrice(itemId, regionId, orderType, refresh, filters)
 {
   var orderOptions = [
     ['itemId', itemId],
@@ -807,6 +1027,21 @@ function getRegionMarketPrice(itemId, regionId, orderType, refresh)
     ['refresh', refresh],
     ['headers', false]
   ];
+  
+  if (filters != null)
+  {
+    for (var row = 0; row < filters.length; row++)
+    {
+      if (filters[row].length > 1)
+      {
+        orderOptions.push(filters[row]);
+      }
+      else
+      {
+        orderOptions.push(filters);
+      }
+    }
+  }
 
   if (orderType.toLowerCase() == 'buy')
   {
@@ -860,9 +1095,10 @@ function getRegions(refresh)
  * @param {stationId} stationId the station ID for the market to look up.
  * @param {orderType} orderType this should be set to "sell" or "buy" orders.
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @param {filters} filters (Optional) An array of filters to place on orders during processing.
  * @customfunction
  */
-function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh)
+function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh, filters)
 {
   var orderOptions = [
     ['itemId', itemId],
@@ -872,6 +1108,21 @@ function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh)
     ['refresh', refresh],
     ['headers', false]
   ];
+
+  if (filters != null)
+  {
+    for (var row = 0; row < filters.length; row++)
+    {
+      if (filters[row].length > 1)
+      {
+        orderOptions.push(filters[row]);
+      }
+      else
+      {
+        orderOptions.push(filters);
+      }
+    }
+  }
 
   if (orderType.toLowerCase() == 'buy')
   {
