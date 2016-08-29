@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '8b'
+var version = '9a'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -500,6 +500,98 @@ function getItemVolume(itemId, refresh)
 {
   var itemData = getItemJson(itemId, refresh);
   return itemData['volume'];
+}
+
+
+/**
+ * Returns a list of all market items found in a given group ID.
+ *
+ * @param {groupId} groupId Defines the parent group to retrieve subgroups. Default is base market group.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getMarketGroupItems(groupId, refresh)
+{
+  var groupTypesEndpoint = 'https://crest-tq.eveonline.com/market/types/?group=https://crest-tq.eveonline.com/market/groups/' + groupId + '/';
+
+  var groupItemList = [];
+
+  var paging = true;
+  while (paging)
+  {
+    var groupTypesJson = JSON.parse(fetchUrl(groupTypesEndpoint));
+    var groupTypes = groupTypesJson['items'];
+
+    for (var itemHandle in groupTypes)
+    {
+      var marketItem = groupTypes[itemHandle];
+      groupItemList.push([marketItem['type']['name'], marketItem['type']['id']]);
+    }
+
+    if (groupTypesJson['next'] != null)
+    {
+      groupTypesEndpoint = groupTypesJson['next']['href'];
+    }
+    else
+    {
+      paging = false;
+    }
+  }
+
+  sortIndex = 0;
+  groupItemList.sort(basicCompare);
+
+  var returnArray = [];
+  returnArray.push(['Name', 'ID']);
+
+  return returnArray.concat(groupItemList);
+}
+
+
+/**
+ * Returns a list of all top-level market groups, or child groups of a given ID.
+ *
+ * @param {groupId} groupId Defines the parent group to retrieve subgroups. Default is base market group.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getMarketGroups(groupId, refresh)
+{
+  var marketGroupEndpoint = 'https://crest-tq.eveonline.com/market/groups/';
+  var marketGroupJson = JSON.parse(fetchUrl(marketGroupEndpoint));
+  var marketGroups = marketGroupJson['items'];
+
+  var marketGroupList = [];
+
+  for (var groupHandle in marketGroups)
+  {
+    var marketGroup = marketGroups[groupHandle];
+
+    var pushGroup = false;
+    if (groupId == null || groupId == '')
+    {
+      // Only push base groups
+      pushGroup = marketGroup['parentGroup'] == null;
+    }
+    else
+    {
+      // Only push children of this group
+      pushGroup = marketGroup['parentGroup'] != null && marketGroup['parentGroup']['id'] == groupId
+    }
+    
+    if (pushGroup)
+    {
+      marketGroupList.push([marketGroup['name'], marketGroup['id']]);
+    }
+  }
+
+  sortIndex = 0;
+  marketGroupList.sort(basicCompare);
+
+  var returnArray = [];
+  returnArray.push(['Name', 'ID']);
+
+  return returnArray.concat(marketGroupList);
 }
 
 
