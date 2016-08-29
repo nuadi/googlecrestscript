@@ -4,6 +4,7 @@ GCS is a Google Code script designed for use in Google Sheets. It provides custo
 # Contents
 
 1. [Features](#features)
+1. [Pre-builts](#pre-builts)
 1. [Setup and Configuration](#setup-and-configuration)
 1. [Custom Function Use](#custom-function-use)
 1. [Examples](#examples)
@@ -34,6 +35,8 @@ GCS contains the following custom functions
 
 ## Market Utility Functions
 
+* **getMarketGroups**: This function will return a lit of all top-level market groups (what you see on the left of the in-game market), or a list of child groups if you specify a group ID.
+* **getMarketGroupItems**: This function will return a list of all items found in a given market group, including child groups.
 * **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument.
 
 ## Industry Functions
@@ -53,6 +56,10 @@ GCS contains the following custom functions
 These functions will be removed in a future version of GCS. Please update your sheets to use the replacement functions listed.
 
 * **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station. **REPLACEMENT:** Replace all uses of this function with `getStationMarketPrice` to maintain functionality.
+
+# Pre-builts
+
+* **Station Trading Sheet**: [[link](https://docs.google.com/spreadsheets/d/17Sl_YkR7J8AcYX05BrwsBNDP_AjGJTrESjfzVFUtfWo)] This sheet is built to support a station trader who buys/sells products in a single station. Be sure to read the README sheet for instructions on how to use and/or modify the sheet to fit your character. Let me know if you have any questions or need help.
 
 # Setup and Configuration
 
