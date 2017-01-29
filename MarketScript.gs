@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '9a'
+var version = '10a'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -222,6 +222,10 @@ function getAverageDailyOrders(regionId, itemId, days, refresh)
   var historicalData = getHistoryAdv(options);
 
   var totalOrders = 0;
+  if (historicalData.length != days)
+  {
+    days = historicalData.length;
+  }
   for (var rowNumber = 0; rowNumber < historicalData.length; rowNumber++)
   {
     totalOrders += historicalData[rowNumber][2];
@@ -251,6 +255,10 @@ function getAverageDailyVolume(regionId, itemId, days, refresh)
   var historicalData = getHistoryAdv(options);
 
   var totalVolume = 0;
+  if (historicalData.length != days)
+  {
+    days = historicalData.length;
+  }
   for (var rowNumber = 0; rowNumber < historicalData.length; rowNumber++)
   {
     totalVolume += historicalData[rowNumber][1];
@@ -820,6 +828,133 @@ function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh,
   }
 
   return returnValues;
+}
+
+
+/**
+ * Returns a list of NPC corporations and their IDs.
+ *
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getNPCCorporations(refresh)
+{
+  var npcCorpEndpoint = 'https://crest-tq.eveonline.com/corporations/npccorps/';
+  var npcCorpJson = JSON.parse(fetchUrl(npcCorpEndpoint));
+
+  var npcCorpList = npcCorpJson['items'];
+
+  var outputList = [];
+
+  for (var npcCorpHandle in npcCorpList)
+  {
+    var npcCorp = npcCorpList[npcCorpHandle];
+    outputList.push([npcCorp['name'], npcCorp['id']]);
+  }
+
+  sortIndex = 0;
+  outputList.sort(basicCompare);
+
+  var returnArray = [];
+  returnArray.push(['Name', 'ID']);
+
+  return returnArray.concat(outputList);
+}
+
+
+/**
+ * Returns the loyalty store items for a given corporation ID.
+ *
+ * @param {corpId} corpId The ID of the NPC Corporation.
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value.
+ * @customfunction
+ */
+function getNPCLoyaltyStore(corpId, refresh)
+{
+  var loyaltyStoreEndpoint = 'https://crest-tq.eveonline.com/corporations/' + corpId + '/loyaltystore/';
+  var loyaltyStoreJson = JSON.parse(fetchUrl(loyaltyStoreEndpoint));
+
+  var loyaltyStoreListings = loyaltyStoreJson['items'];
+
+  var tempList = [];
+
+  for (var entryHandle in loyaltyStoreListings)
+  {
+    var loyaltyStoreListing = loyaltyStoreListings[entryHandle];
+
+    var loyaltyItem = loyaltyStoreListing['item'];
+    var itemName = loyaltyItem['name'];
+    var itemId = loyaltyItem['id'];
+
+    var lpCost = loyaltyStoreListing['lpCost'];
+    var iskCost = loyaltyStoreListing['iskCost'];
+
+    var reqItemLimit = 5;
+    var reqItemColumns = 3;
+
+    var reqTempList = [];
+    for (var reqItems = 0; reqItems < reqItemLimit; reqItems++)
+    {
+      for (var columns = 0; columns < reqItemColumns; columns++)
+      {
+        reqTempList.push('');
+      }
+    }
+
+    var requiredItemList = loyaltyStoreListing['requiredItems'];
+    for (var itemNumber = 0; itemNumber < requiredItemList.length; itemNumber++)
+    {
+      if (itemNumber >= reqTempList.length / 1)
+      {
+        break;
+      }
+
+      var requiredEntry = requiredItemList[itemNumber];
+      var reqItem = requiredEntry['item'];
+
+      var reqItemName = reqItem['name'];
+      var reqItemId = reqItem['id'];
+      var reqItemQty = requiredEntry['quantity']
+
+      var colPosition = itemNumber * reqItemColumns;
+      reqTempList[colPosition] = reqItemName;
+      reqTempList[colPosition + 1] = reqItemId;
+      reqTempList[colPosition + 2] = reqItemQty;
+    }
+
+    var newItemEntry = [itemName, itemId, lpCost, iskCost];
+    newItemEntry = newItemEntry.concat(reqTempList);
+    tempList.push(newItemEntry);
+  }
+
+  sortIndex = 0;
+  tempList.sort(basicCompare);
+
+  var returnArray = [];
+  var headers = ['Item Name', 'ID', 'LP Cost', 'ISK Cost'];
+  var reqHeaders = [];
+  for (var reqItems = 0; reqItems < reqItemLimit; reqItems++)
+  {
+    for (var columns = 0; columns < reqItemColumns; columns++)
+    {
+      switch (columns)
+      {
+        case 0:
+          reqHeaders.push('Required Item ' + (reqItems + 1));
+          break;
+        case 1:
+          reqHeaders.push('Required Item ' + (reqItems + 1) + ' ID');
+          break;
+        case 2:
+          reqHeaders.push('Required Item ' + (reqItems + 1) + ' Qty');
+          break;
+      }
+    }
+  }
+  headers = headers.concat(reqHeaders)
+  returnArray.push(headers);
+
+  return returnArray.concat(tempList);
 }
 
 
