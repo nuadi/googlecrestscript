@@ -39,6 +39,10 @@ GCS contains the following custom functions
 * **getMarketGroupItems**: This function will return a list of all items found in a given market group, including child groups.
 * **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument.
 
+## NPC Corporations and LP Stores
+* **getNPCCorporations**: This function will return a list of all NPC corporations and their corp ID for use in the LP store function.
+* **getNPCLoyaltyStore**: This function will return a matrix with all available NPC Loyalty Store items, their costs, and required items for a given corp ID.
+
 ## Industry Functions
 * **getAdjustedPrice**: Returns the adjusted price for an item used in industrial calculations.
 * **getCostIndex**: Returns the cost index for a given activity in a given solar system.
