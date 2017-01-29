@@ -64,6 +64,7 @@ These functions will be removed in a future version of GCS. Please update your s
 # Pre-builts
 
 * **Station Trading Sheet**: [[link](https://docs.google.com/spreadsheets/d/17Sl_YkR7J8AcYX05BrwsBNDP_AjGJTrESjfzVFUtfWo)] This sheet is built to support a station trader who buys/sells products in a single station. Be sure to read the README sheet for instructions on how to use and/or modify the sheet to fit your character. Let me know if you have any questions or need help.
+* **LP Store**: [[link](https://docs.google.com/spreadsheets/d/1kNuNNus_j1fwIkSm62ADkRdoWmntmGhW5_ndpSJsqBI)] This sheet is build to output an LP Store and then calculate the ISK/LP ratio for all items. Blueprint prices cannot be pulled from CREST, so these prices must be updated manually. Otherwise it handles everything else. Duplicate the LP Store sheet to change the store and then update the Market sheet with the items and prices needed.
 
 # Setup and Configuration
 
