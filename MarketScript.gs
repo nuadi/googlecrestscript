@@ -1,5 +1,5 @@
 // Google Crest Script (GCS)
-var version = '10a'
+var version = '10b'
 // /u/nuadi @ Reddit
 // @nuadibantine (Twitter)
 //
@@ -886,6 +886,8 @@ function getNPCLoyaltyStore(corpId, refresh)
     var itemName = loyaltyItem['name'];
     var itemId = loyaltyItem['id'];
 
+    var qty = loyaltyStoreListing['quantity'];
+
     var lpCost = loyaltyStoreListing['lpCost'];
     var iskCost = loyaltyStoreListing['iskCost'];
 
@@ -922,7 +924,7 @@ function getNPCLoyaltyStore(corpId, refresh)
       reqTempList[colPosition + 2] = reqItemQty;
     }
 
-    var newItemEntry = [itemName, itemId, lpCost, iskCost];
+    var newItemEntry = [itemName, itemId, qty, lpCost, iskCost];
     newItemEntry = newItemEntry.concat(reqTempList);
     tempList.push(newItemEntry);
   }
@@ -931,7 +933,7 @@ function getNPCLoyaltyStore(corpId, refresh)
   tempList.sort(basicCompare);
 
   var returnArray = [];
-  var headers = ['Item Name', 'ID', 'LP Cost', 'ISK Cost'];
+  var headers = ['Item Name', 'ID', 'Qty', 'LP Cost', 'ISK Cost'];
   var reqHeaders = [];
   for (var reqItems = 0; reqItems < reqItemLimit; reqItems++)
   {
