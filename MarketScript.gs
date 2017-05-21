@@ -19,7 +19,7 @@ var sortOrder = 1;
 function initializeGetMarketPrice()
 {
   // Test PLEX in Dodixie
-  var itemId = 29668;
+  var itemId = 44992;
   var regionId = 10000032;
   var stationId = 60011866;
   var orderType = "SELL";
