@@ -8,6 +8,7 @@ GCS is a Google Code script designed for use in Google Sheets. It provides custo
 1. [Setup and Configuration](#setup-and-configuration)
 1. [Custom Function Use](#custom-function-use)
 1. [Examples](#examples)
+1. [FAQ](#faq)
 1. [Troubleshooting](#troubleshooting)
 1. [Known Issues](#known-issues)
 1. [Questions, Comments, Feedback](#questions-comments-feedback)
@@ -221,6 +222,22 @@ Many of the market functions support an optional filters parameter. This paramet
 |maxVolume| This will filter all orders above a given volume
 |minVolume| This will filter all orders below a given volume
 
+# FAQ
+
+I get a lot of questions about this script, so I felt it was time to build this section. If your question does not appear here then by all means [contact me](#questions-comments-feedback).
+
+## Do the functions automatically update over time?
+
+No, and yes. First off, nothing in this script automatically updates. However, Google *does* update all cells in a workbook periodically. I am not aware of the exact timing, but I believe it is somewhere in the neighborhood of 15-30 minutes as long as you keep the workbook open. I do not think it updates automatically when closed, but it Google will try to call the custom functions when you open the sheet again.
+
+Therefore, if you need the scripts automatically updated you have a choice of leaving the workbook open all the time (as I do), or periodically opening the workbook yourself to force a workbook-wide update. Be warned: You can inadvertantly hit your URL Fetch quota in both cases.
+
+## Can you get the history for a market item at a station?
+
+No. CCP does not provide this high of a resolution for historical data. What you see in-game in the historical data is exactly what you get through the CREST API.
+
+If you truly need station-specific historical data, then you will have to scrape market data yourself, store it, and then figure out a way to determine the historical data through your own heuristics.
+
 # Troubleshooting
 
 ## Function not updating and the reload parameter
@@ -249,12 +266,10 @@ If you hit the limit, reduce your item ID list by half, and observe behavior. If
 
 # Questions, Comments, Feedback
 
-If you have any questions on how to use the function, comments on what could be improved, or general feedback on the script, this README, or bugs - Contact me
+If you have any questions on how to use the functions, comments on what could be improved, general feedback on the script, this README, or bugs - do not hesitate to contact me. I also help in custom implementations if your corp has some workflow that doesn't quite fit into the script's feature set.
 
 Reddit (best method): /u/nuadi
 
 Twitter: @nuadibantine
-
-In-game: Message Nuadi (CEO of Fem Bot Industries), or join the channel "Fembot Pub"
 
 If you have a GitHub account, feel free to create issues, feature requests, etc.
