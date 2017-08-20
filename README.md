@@ -1,5 +1,7 @@
-# Google CREST Script (GCS)
+# Google CREST/ESI Script (GCS)
 GCS is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST web service.
+
+This entire script is slated for migration to use CCP's ESI endpoints. If you see a `_beta.gs` script in the repo, please take a moment to copy your sheet and try it out. The beta scripts are being used to migrate functions and test them before finalizing the version for public consumption.
 
 # Contents
 
@@ -21,7 +23,7 @@ GCS contains the following custom functions
 
 * **getRegionMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region.
 * **getStationMarketPrice**: This is like `getRegionMarketPrice` but will filter down to a specific station.
-* **getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.
+* ~~**getMarketPriceList**: This function is volitile. Read [Known Issues](#known-issues) for more details. This function will accept a list of item IDs and then call getMarketPrice repeatedly to get prices for all items in the list. This is a convenience function only since CCP does not provide a multi-item endpoint for market prices at this time.~~ This function is being removed with the 12 series of scripts. If you insist on keeping it, you can copy it from a previous version into the 12 series, or beyond. However, I will no longer support or maintain this function until CCP gives us a proper list-based endpoint.
 * **getOrders**: This function will return all market order data (Date Issued, Volume, Price, Location) for a given item in a given region.
 * **getOrdersAdv**: This function behaves as `getOrders` does, but accepts a single 2D array of options. See [Examples](#examples) below for details.
 * **countStationOrders**: This function returns the number of available orders for a given item at a station.
@@ -38,7 +40,7 @@ GCS contains the following custom functions
 
 * **getMarketGroups**: This function will return a lit of all top-level market groups (what you see on the left of the in-game market), or a list of child groups if you specify a group ID.
 * **getMarketGroupItems**: This function will return a list of all items found in a given market group, including child groups.
-* **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument.
+* **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument. **Warning:** This function has no migration path in the current form of ESI, so it will die with CREST unless CCP gets their act together.
 
 ## NPC Corporations and LP Stores
 * **getNPCCorporations**: This function will return a list of all NPC corporations and their corp ID for use in the LP store function.
@@ -132,6 +134,8 @@ Your formula should look something like this:
 * 1 : The last argument can be any value, and is used to reload the function. Read [Troubleshooting](#troubleshooting) for more details.
 
 ## getMarketPriceList
+
+**WARNING:** This function is being removed in future versions of GCS. You are welcome to keep the function in your scripts, but I will no longer support or maintain compatability after the 12 series script is final.
 
 Your formula should look something like this:
 
