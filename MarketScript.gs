@@ -1,4 +1,4 @@
-// Google CREST/ESI Script (GCS)
+// Google CREST/ESI Script (GCES)
 var version = '12b'
 // nuadi.bantine@gmail.com
 //
@@ -131,7 +131,7 @@ function fetchUrl(url, esi)
     esi = false
   }
 
-  if (gcsGetLock() || esi)
+  if (gcesGetLock() || esi)
   {
     // Make the service call
     headers = {'User-Agent': 'Google CREST/ESI Script version ' + version + ' (nuadi.bantine@gmail.com)'}
@@ -143,14 +143,14 @@ function fetchUrl(url, esi)
 
 
 /**
- * Custom implementation of a semaphore after LockService failed to support GCS properly.
+ * Custom implementation of a semaphore after LockService failed to support GCES properly.
  * Hopefully this works a bit longer...
  *
  * This function searches through N semaphores, until it finds one that is not defined.
  * Once it finds one, that n-th semaphore is set to TRUE and the function returns.
  * If no semaphore is open, the function will start over with no wait.
  */
-function gcsGetLock()
+function gcesGetLock()
 {
   var NLocks = 150;
   var lock = false;
@@ -158,9 +158,9 @@ function gcsGetLock()
   {
     for (var nLock = 0; nLock < NLocks; nLock++)
     {
-      if (CacheService.getDocumentCache().get('GCSLock' + nLock) == null)
+      if (CacheService.getDocumentCache().get('GCESLock' + nLock) == null)
       {
-        CacheService.getDocumentCache().put('GCSLock' + nLock, true, 1)
+        CacheService.getDocumentCache().put('GCESLock' + nLock, true, 1)
         lock = true;
         break;
       }
@@ -1330,12 +1330,12 @@ function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh, 
 function onOpen()
 {
   var submenus = [{name: 'Check for updates', functionName: 'versionCheck'}];
-  SpreadsheetApp.getActiveSpreadsheet().addMenu('GCS/ESI', submenus);
+  SpreadsheetApp.getActiveSpreadsheet().addMenu('GCES', submenus);
 }
 
 
 /**
- * Private helper function that will check for a new version of GCS/ESI.
+ * Private helper function that will check for a new version of GCES.
  */
 function versionCheck()
 {
@@ -1347,12 +1347,12 @@ function versionCheck()
     newVersion = newVersion.getContentText().trim();
     Logger.log('Current version from Github: ' + newVersion);
 
-    var message = 'You are using the latest version of GCS/ESI. Fly safe. o7';
+    var message = 'You are using the latest version of GCES. Fly safe. o7';
     var title = 'No updates found';
     if (newVersion > version)
     {
-      message = 'A new version of GCS/ESI is available on GitHub.';
-      title = 'GCS/ESI version ' + newVersion + ' available!';
+      message = 'A new version of GCES is available on GitHub.';
+      title = 'GCES version ' + newVersion + ' available!';
     }
     SpreadsheetApp.getActiveSpreadsheet().toast(message, title, 120);
   }
