@@ -123,8 +123,14 @@ function countStationVolume(itemId, regionId, stationId, orderType, refresh)
  * @param {esi} esi Set to TRUE to override semaphore subsystem and skip locking
  * @param {options} options The fetch options to utilize in the request
  */
-function fetchUrl(url, esi=false)
+function fetchUrl(url, esi)
 {
+  if (esi == null)
+  {
+    // Default to false
+    esi = false
+  }
+
   if (gcsGetLock() || esi)
   {
     // Make the service call
@@ -717,27 +723,41 @@ function getMarketJson(itemId, regionId, orderType)
   else
   {
     orderType = orderType.toLowerCase();
-    
+
     // Setup variables for the market endpoint we want
     var marketUrl = 'https://esi.tech.ccp.is/latest/markets/' + regionId + '/orders/';
     var parameterUrl = '?order_type=' + orderType + '&type_id=' + itemId;
     Logger.log('Pulling market orders from url: ' + marketUrl + parameterUrl)
-    
     var fullUrl = marketUrl + parameterUrl;
-    
-    // TODO: Insert a cachinator check here
-    
-    try
+    // Check cache for this data
+    marketData = CacheService.getDocumentCache().get(fullUrl);
+
+    if (marketData == null)
     {
-      // Make the call to get some market data
-      marketData = JSON.parse(fetchUrl(marketUrl + parameterUrl));
-      
-      // TODO: Insert a cachinator.save() call here
+      // We have nothing in cache. Loot ESI.
+      try
+      {
+        // Make the call to get some market data
+        var esiResponse = fetchUrl(fullUrl, true);
+        marketData = JSON.parse(esiResponse);
+        // Save data to cache.
+        var rightNow = new Date().getTime();
+        var esiHeaders = esiResponse.getAllHeaders();
+        var expirationDate = esiHeaders['Expires'];
+        var timestamp = new Date(expirationDate).getTime();
+        var cacheTime = (timestamp - rightNow) / 1000;
+
+        CacheService.getDocumentCache().put(fullUrl, JSON.stringify(marketData), cacheTime)
+      }
+      catch (unknownError)
+      {
+        Logger.log(unknownError);
+        throw unknownError;
+      }
     }
-    catch (unknownError)
+    else
     {
-      Logger.log(unknownError);
-      throw unknownError;
+      marketData = JSON.parse(marketData);
     }
   }
 
@@ -1079,14 +1099,13 @@ function getOrdersAdv(options)
   
   // Make the call to get all market data for this item
   var jsonMarket = getMarketJson(itemId, regionId, orderType);
-  var marketItems = jsonMarket;
-  
+
   // Convert all data to an array for proper output
   var outputArray = [];
-  for (var rowKey in marketItems)
+  for (var rowKey in jsonMarket)
   {
     var saveRow = true;
-    var rowData = marketItems[rowKey];
+    var rowData = jsonMarket[rowKey];
     var newRow = [];
     for (var colKey in rowData)
     {
