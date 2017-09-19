@@ -1,7 +1,7 @@
 # Google CREST/ESI Script (GCES)
 GCES is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST/ESI web service.
 
-This entire script is slated for migration to use CCP's ESI endpoints. If you see a `_beta.gs` script in the repo, please take a moment to copy your sheet and try it out. The beta scripts are being used to migrate functions and test them before finalizing the version for public consumption.
+This entire script is slated for migration to use CCP's ESI endpoints. All betas will be developed in branches, so check the repo branch list for current development. The beta scripts are being used to migrate functions and test them before finalizing the version for public consumption. If there is a branch in development, please consider making a copy of your sheet and updating it with the branched code for testing.
 
 # Contents
 
