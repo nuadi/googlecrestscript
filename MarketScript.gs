@@ -1,12 +1,10 @@
-// Google Crest Script (GCS)
-var version = '10b'
-// /u/nuadi @ Reddit
-// @nuadibantine (Twitter)
+// Google CREST/ESI Script (GCES)
+var version = '12b'
+// nuadi.bantine@gmail.com
 //
 // LICENSE: Use at your own risk, and fly safe.
 
-// Global variable needed to track number of retries attempted
-var retries = 0;
+
 // Global variables used in order comparison function and set by
 // Advanced Orders function. Default is the Price column in ascending order.
 var sortIndex = 1;
@@ -14,7 +12,8 @@ var sortOrder = 1;
 
 
 /**
- * Private helper function that is used to initialize the refresh token
+ * >>START HERE<<
+ * Use this function to initialize, or test, the script and permissions.
  */
 function initializeGetMarketPrice()
 {
@@ -22,16 +21,16 @@ function initializeGetMarketPrice()
   var itemId = 44992;
   var regionId = 10000032;
   var stationId = 60011866;
-  var orderType = "SELL";
+  var orderType = 'SELL';
 
-  var price = getMarketPrice(itemId, regionId, stationId, orderType);
+  var price = getStationMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
 
   // Now in Jita
   regionId = 10000002;
   stationId = 60003760;
 
-  price = getMarketPrice(itemId, regionId, stationId, orderType);
+  price = getStationMarketPrice(itemId, regionId, stationId, orderType);
   Logger.log(price);
 }
 
@@ -121,31 +120,37 @@ function countStationVolume(itemId, regionId, stationId, orderType, refresh)
  * to prevent service overload.
  *
  * @param {url} url The URL to contact
+ * @param {esi} esi Set to TRUE to override semaphore subsystem and skip locking
  * @param {options} options The fetch options to utilize in the request
  */
-function fetchUrl(url)
+function fetchUrl(url, esi)
 {
-  if (gcsGetLock())
+  if (esi == null)
+  {
+    // Default to false
+    esi = false
+  }
+
+  if (gcesGetLock() || esi)
   {
     // Make the service call
-    headers = {"User-Agent": "Google Crest Script version " + version + " (/u/nuadi @Reddit.com)"}
-    params = {"headers": headers}
+    headers = {'User-Agent': 'Google CREST/ESI Script version ' + version + ' (nuadi.bantine@gmail.com)'}
+    params = {'headers': headers}
     httpResponse = UrlFetchApp.fetch(url, params);
   }
-    
   return httpResponse;
 }
 
 
 /**
- * Custom implementation of a semaphore after LockService failed to support GCS properly.
+ * Custom implementation of a semaphore after LockService failed to support GCES properly.
  * Hopefully this works a bit longer...
  *
  * This function searches through N semaphores, until it finds one that is not defined.
  * Once it finds one, that n-th semaphore is set to TRUE and the function returns.
- * If no semaphore is open, the function sleeps 0.1 seconds before trying again.
+ * If no semaphore is open, the function will start over with no wait.
  */
-function gcsGetLock()
+function gcesGetLock()
 {
   var NLocks = 150;
   var lock = false;
@@ -153,9 +158,9 @@ function gcsGetLock()
   {
     for (var nLock = 0; nLock < NLocks; nLock++)
     {
-      if (CacheService.getDocumentCache().get('GCSLock' + nLock) == null)
+      if (CacheService.getDocumentCache().get('GCESLock' + nLock) == null)
       {
-        CacheService.getDocumentCache().put('GCSLock' + nLock, true, 1)
+        CacheService.getDocumentCache().put('GCESLock' + nLock, true, 1)
         lock = true;
         break;
       }
@@ -335,11 +340,11 @@ function getHistoryAdv(options)
 
   if (options.length <= 0)
   {
-    throw new Error("No options found");
+    throw new Error('No options found');
   }
   else if (options[0] == null || options[0].length < 2)
   {
-    throw new Error("Options must have 2 columns");
+    throw new Error('Options must have 2 columns');
   }
 
   for (var row = 0; row < options.length; row++)
@@ -406,7 +411,7 @@ function getHistoryAdv(options)
   }
 
   var historyEndpoint = 'https://crest-tq.eveonline.com/market/' + regionId + '/history/';
-  var typeUrl = "?type=https://crest-tq.eveonline.com/inventory/types/" + itemId + "/";
+  var typeUrl = '?type=https://crest-tq.eveonline.com/inventory/types/' + itemId + '/';
   var historyJson = JSON.parse(fetchUrl(historyEndpoint + typeUrl));
 
   var historicalData = historyJson['items'];
@@ -676,7 +681,7 @@ function getMarketItems(refresh)
 
 /**
  * Private helper function that will return the JSON provided for
- * a given CREST market query.
+ * a given market query.
  *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
@@ -689,21 +694,25 @@ function getMarketJson(itemId, regionId, orderType)
   // Validate incoming arguments
   if (itemId == null)
   {
-    throw new Error("Item ID cannot be NULL.");
+    throw new Error('Item ID cannot be NULL.');
   }
-  else if (typeof(itemId) != "number")
+  else if (typeof(itemId) != 'number')
   {
     throw new Error('Item ID must be a number. Instead found a(n) ' + typeof(itemId) + '.');
   }
-  else if (regionId == null || typeof(regionId) != "number")
+  else if (regionId == null)
   {
-    throw new Error("Invalid Region ID");
+    throw new Error('Region ID cannot be NULL.');
+  }
+  else if (typeof(regionId) != 'number')
+  {
+    throw new Error('Region ID must be a number. Instead found a(n) ' + typeof(regionId) + '.');
   }
   else if (orderType == null)
   {
-    throw new Error("Order type cannot be NULL.");
+    throw new Error('Order type cannot be NULL.');
   }
-  else if (typeof(orderType) != "string")
+  else if (typeof(orderType) != 'string')
   {
     throw new Error('Order type must be a STRING value.');
   }
@@ -714,48 +723,41 @@ function getMarketJson(itemId, regionId, orderType)
   else
   {
     orderType = orderType.toLowerCase();
-    
+
     // Setup variables for the market endpoint we want
-    var marketUrl = "https://crest-tq.eveonline.com/market/" + regionId + "/orders/" + orderType + "/";
-    var typeUrl = "?type=https://crest-tq.eveonline.com/inventory/types/" + itemId + "/";
-    Logger.log("Pulling market orders from url: " + marketUrl + typeUrl)
-    
-    try
+    var marketUrl = 'https://esi.tech.ccp.is/latest/markets/' + regionId + '/orders/';
+    var parameterUrl = '?order_type=' + orderType + '&type_id=' + itemId;
+    Logger.log('Pulling market orders from url: ' + marketUrl + parameterUrl)
+    var fullUrl = marketUrl + parameterUrl;
+    // Check cache for this data
+    marketData = CacheService.getDocumentCache().get(fullUrl);
+
+    if (marketData == null)
     {
-      // Make the call to get some market data
-      marketData = JSON.parse(fetchUrl(marketUrl + typeUrl));
+      // We have nothing in cache. Loot ESI.
+      try
+      {
+        // Make the call to get some market data
+        var esiResponse = fetchUrl(fullUrl, true);
+        marketData = JSON.parse(esiResponse);
+        // Save data to cache.
+        var rightNow = new Date().getTime();
+        var esiHeaders = esiResponse.getAllHeaders();
+        var expirationDate = esiHeaders['Expires'];
+        var timestamp = new Date(expirationDate).getTime();
+        var cacheTime = (timestamp - rightNow) / 1000;
+
+        CacheService.getDocumentCache().put(fullUrl, JSON.stringify(marketData), cacheTime)
+      }
+      catch (unknownError)
+      {
+        Logger.log(unknownError);
+        throw unknownError;
+      }
     }
-    catch (unknownError)
+    else
     {
-      Logger.log(unknownError);
-      var addressError = "Address unavailable:";
-      if (unknownError.message.slice(0, addressError.length) == addressError)
-      {
-        var maxRetries = 3;
-        
-        // See if we can try again
-        if (retries <= maxRetries)
-        {
-          retries++;
-          marketData = getMarketJson(itemId, regionId, orderType); 
-        }
-        else
-        {
-          marketData = "";
-          for (i in unknownError)
-          {
-            marketData += i + ": " + unknownError[i] + "\n";
-          }
-        }
-      }
-      else
-      {
-        marketData = "";
-        for (var i in unknownError)
-        {
-          marketData += i + ": " + unknownError[i] + "\n";
-        }
-      }
+      marketData = JSON.parse(marketData);
     }
   }
 
@@ -764,7 +766,7 @@ function getMarketJson(itemId, regionId, orderType)
 
 
 /**
- * Returns the market price for a given item.
+ * Returns the market price for a given item. (Deprecated)
  *
  * @param {itemId} itemId the item ID of the product to look up
  * @param {regionId} regionId the region ID for the market to look up
@@ -775,59 +777,6 @@ function getMarketJson(itemId, regionId, orderType)
 function getMarketPrice(itemId, regionId, stationId, orderType, refresh)
 {
   return getStationMarketPrice(itemId, regionId, stationId, orderType, refresh);
-}
-
-
-/**
- * Custom function that returns an array of prices for a given array
- * of items.
- *
- * @param {itemIdList} itemIdList the list of item IDs of the products to look up
- * @param {regionId} regionId the region ID for the market to look up
- * @param {stationId} stationId the station ID for the market to focus on
- * @param {orderType} orderType this should be set to "sell" or "buy" orders
- * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
- * @param {filters} filters (Optional) An array of filters to place on orders during processing.
- * @customfunction
- */
-function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh, filters)
-{
-  var returnValues = [];
-
-  // Only validate arguments within the context of this function
-  // Further validation will occur inside getMarketPrice
-  if (itemIdList == null || typeof(itemIdList) != "object")
-  {
-    throw new Error("Invalid Item list");
-  }
-  else
-  {
-    for (var itemIndex = 0; itemIndex < itemIdList.length; itemIndex++)
-    {
-      var itemId = itemIdList[itemIndex];
-      if (typeof(itemId) == "object")
-      {
-        // This needs to be fixed before passing to getMarketPrice() function
-        if (itemId.length == 1)
-        {
-          // This is only a number
-          itemId = Number(itemId);
-        }
-      }
-      
-      // Make sure to handle blank cells accordingly
-      if (itemId > 0)
-      {
-        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType.toLowerCase(), refresh, filters)
-      }
-      else
-      {
-        returnValues[itemIndex] = "";
-      }
-    }
-  }
-
-  return returnValues;
 }
 
 
@@ -1028,11 +977,11 @@ function getOrdersAdv(options)
 
   if (options.length <= 0)
   {
-    throw new Error("No options found");
+    throw new Error('No options found');
   }
   else if (options[0] == null || options[0].length < 2)
   {
-    throw new Error("Options must have 2 columns");
+    throw new Error('Options must have 2 columns');
   }
 
   for (var row = 0; row < options.length; row++)
@@ -1150,18 +1099,17 @@ function getOrdersAdv(options)
   
   // Make the call to get all market data for this item
   var jsonMarket = getMarketJson(itemId, regionId, orderType);
-  var marketItems = jsonMarket['items'];
-  
+
   // Convert all data to an array for proper output
   var outputArray = [];
-  for (var rowKey in marketItems)
+  for (var rowKey in jsonMarket)
   {
     var saveRow = true;
-    var rowData = marketItems[rowKey];
+    var rowData = jsonMarket[rowKey];
     var newRow = [];
     for (var colKey in rowData)
     {
-      if (colKey == 'id' && showOrderId == true)
+      if (colKey == 'order_id' && showOrderId == true)
       {
         newRow[orderIdColumn] = rowData[colKey];
       }
@@ -1169,10 +1117,11 @@ function getOrdersAdv(options)
       {
         var dateValues = rowData[colKey].split(/[T-]/);
         var dateString = dateValues.slice(0,3).join('/') + ' ' + dateValues[3];
-        //Logger.log("Converting date string: " + dateString);
+        dateString = dateString.replace('Z', '');
+        Logger.log('Converting date string: ' + dateString);
         newRow[0] = new Date(dateString);
       }
-      else if (colKey == 'minVolume' && orderType == 'buy')
+      else if (colKey == 'min_volume' && orderType == 'buy')
       {
         newRow[minVolumeColumn] = rowData[colKey];
       }
@@ -1193,7 +1142,7 @@ function getOrdersAdv(options)
       {
         newRow[rangeColumn] = rowData[colKey];
       }
-      else if (colKey == 'volume')
+      else if (colKey == 'volume_remain')
       {
         var orderVolume = rowData[colKey];
         if (minVolume != null && orderVolume < minVolume)
@@ -1207,12 +1156,12 @@ function getOrdersAdv(options)
         
         newRow[2] = orderVolume;
       }
-      else if (colKey == 'location')
+      else if (colKey == 'location_id')
       {
-        var locationData = rowData[colKey];
-        newRow[locationColumn] = locationData['name'];
+        var locationId = rowData[colKey];
+        newRow[locationColumn] = locationId;
 
-        if (stationId != null && stationId != locationData['id'])
+        if (stationId != null && stationId != locationId)
         {
           saveRow = false;
           break;
@@ -1220,7 +1169,7 @@ function getOrdersAdv(options)
 
         if (showStationId == true)
         {
-          newRow[stationIdColumn] = locationData['id'];
+          newRow[stationIdColumn] = locationId;
         }
       }
     }
@@ -1381,12 +1330,12 @@ function getStationMarketPrice(itemId, regionId, stationId, orderType, refresh, 
 function onOpen()
 {
   var submenus = [{name: 'Check for updates', functionName: 'versionCheck'}];
-  SpreadsheetApp.getActiveSpreadsheet().addMenu("GCS", submenus);
+  SpreadsheetApp.getActiveSpreadsheet().addMenu('GCES', submenus);
 }
 
 
 /**
- * Private helper function that will check for a new version of GCS.
+ * Private helper function that will check for a new version of GCES.
  */
 function versionCheck()
 {
@@ -1398,12 +1347,12 @@ function versionCheck()
     newVersion = newVersion.getContentText().trim();
     Logger.log('Current version from Github: ' + newVersion);
 
-    var message = 'You are using the latest version of GCS. Fly safe. o7';
+    var message = 'You are using the latest version of GCES. Fly safe. o7';
     var title = 'No updates found';
     if (newVersion > version)
     {
-      message = 'A new version of GCS is available on GitHub.';
-      title = 'GCS version ' + newVersion + ' available!';
+      message = 'A new version of GCES is available on GitHub.';
+      title = 'GCES version ' + newVersion + ' available!';
     }
     SpreadsheetApp.getActiveSpreadsheet().toast(message, title, 120);
   }

@@ -1,5 +1,5 @@
-# Google CREST/ESI Script (GCS)
-GCS is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST web service.
+# Google CREST/ESI Script (GCES)
+GCES is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST/ESI web service.
 
 This entire script is slated for migration to use CCP's ESI endpoints. If you see a `_beta.gs` script in the repo, please take a moment to copy your sheet and try it out. The beta scripts are being used to migrate functions and test them before finalizing the version for public consumption.
 
@@ -17,7 +17,7 @@ This entire script is slated for migration to use CCP's ESI endpoints. If you se
 
 # Features
 
-GCS contains the following custom functions
+GCES contains the following custom functions
 
 ## Market Price Functions
 
@@ -40,7 +40,7 @@ GCS contains the following custom functions
 
 * **getMarketGroups**: This function will return a lit of all top-level market groups (what you see on the left of the in-game market), or a list of child groups if you specify a group ID.
 * **getMarketGroupItems**: This function will return a list of all items found in a given market group, including child groups.
-* **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument. **Warning:** This function has no migration path in the current form of ESI, so it will die with CREST unless CCP gets their act together.
+* **getMarketItems**: This function will return a list of all items found on the open market along with their corresponding item ID. This function has an optional refresh argument. **Warning:** This function has no direct migration path in the current form of ESI, so it will die with CREST.
 
 ## NPC Corporations and LP Stores
 * **getNPCCorporations**: This function will return a list of all NPC corporations and their corp ID for use in the LP store function.
@@ -60,9 +60,9 @@ GCS contains the following custom functions
 
 ## Depricated Functions
 
-These functions will be removed in a future version of GCS. Please update your sheets to use the replacement functions listed.
+These functions will be removed in a future version of GCES. Please update your sheets to use the replacement functions listed.
 
-* **getMarketPrice**: This function will access the EVE CREST market endpoint to access the real-time market data for a given item in a region at a given station. **REPLACEMENT:** Replace all uses of this function with `getStationMarketPrice` to maintain functionality.
+* **getMarketPrice**: This function will access the EVE CREST/ESI market endpoint to access the real-time market data for a given item in a region at a given station. **REPLACEMENT:** Replace all uses of this function with `getStationMarketPrice` to maintain functionality.
 
 # Pre-builts
 
@@ -73,7 +73,7 @@ These functions will be removed in a future version of GCS. Please update your s
 
 ## Example Spreadsheet
 
-You can find an example spreadsheet here: [GCS Example](https://docs.google.com/spreadsheets/d/12QlphSOb-5xkukTeUlmM9I2pAFi48dXFLS5OIMA7DyY).
+You can find an example spreadsheet here: [GCES Example](https://docs.google.com/spreadsheets/d/12QlphSOb-5xkukTeUlmM9I2pAFi48dXFLS5OIMA7DyY).
 
 Once you have it open, got to `File -> Make a Copy...` and then name the new file what ever you like. This spreadsheet contains examples of how to use all of the available functions, along with the script already copied into the editor.
 
@@ -98,7 +98,7 @@ The getStationMarketPrice() method is built as a Custom Function for use in cell
 The return value is the price for that item at a given station based on the order type that you want. If the value is "sell" then you will be given the lowest sell price for the product. If it is "buy" then you will get the highest buy order price for the product. If no orders can be found at that station, then the return price is 0.
 
 1. You can get the Item ID using VLookup and a sheet dedicated to hold all items and their ID. This comes from the invType table of the Static Data Export (SDE). You can get this data in XLS format from a really nice guy over at https://www.fuzzwork.co.uk/dump/latest/
-2. You can get the Region and Station IDs using the Map endpoint in CREST, no authorization requried. I use my browser window to find what I need. For convenience, here are the four major hub regions and stations
+2. You can get the Region and Station IDs using the Map endpoint in CREST/ESI, no authorization requried. I use my browser window to find what I need. For convenience, here are the four major hub regions and stations
 
   Domain ID	10000043
 
@@ -135,7 +135,7 @@ Your formula should look something like this:
 
 ## getMarketPriceList
 
-**WARNING:** This function is being removed in future versions of GCS. You are welcome to keep the function in your scripts, but I will no longer support or maintain compatability after the 12 series script is final.
+**WARNING:** This function is being removed in future versions of GCES. You are welcome to keep the function in your scripts, but I will no longer support or maintain compatability after the 12 series script is final.
 
 Your formula should look something like this:
 
@@ -238,7 +238,7 @@ Therefore, if you need the scripts automatically updated you have a choice of le
 
 ## Can you get the history for a market item at a station?
 
-No. CCP does not provide this high of a resolution for historical data. What you see in-game in the historical data is exactly what you get through the CREST API.
+No. CCP does not provide this high of a resolution for historical data. What you see in-game in the historical data is exactly what you get through the CREST/ESI API.
 
 If you truly need station-specific historical data, then you will have to scrape market data yourself, store it, and then figure out a way to determine the historical data through your own heuristics.
 
@@ -254,26 +254,26 @@ Some users have tried to use non-deterministic values for this argument. Keep in
 
 # Known Issues
 
-The Google Sheets and Scripts platform comes with it's own set of limitations. These effect the GCS in different ways, which I've listed here with possible work arounds.
+The Google Sheets and Scripts platform comes with it's own set of limitations. These effect the GCES in different ways, which I've listed here with possible work arounds.
 
 ## UrlFetchApp calls per day
 
 Google limits the number of UrlFetchApp service calls that you can make per day. You can view the limits on the [Services Dashboard](https://script.google.com/dashboard) by clicking on the Quota Limits tab. This limit is on your entire Google account, so using multiple spreadsheets is not a viable workaround.
 
-As a result of this limitation, it's not currently possible to construct a spreadsheet that requests the price of every item in EVE Online. It's recommended that you use GCS to build specific spreadsheets for tasks which benefit from pricing, but don't aim to analyze the entire market. If you simply cannot avoid this limitation with your spreadsheet, then you will either need to build a program yourself, or find someone who has a program to perform the analysis you need.
+As a result of this limitation, it's not currently possible to construct a spreadsheet that requests the price of every item in EVE Online. It's recommended that you use GCES to build specific spreadsheets for tasks which benefit from pricing, but don't aim to analyze the entire market. If you simply cannot avoid this limitation with your spreadsheet, then you will either need to build a program yourself, or find someone who has a program to perform the analysis you need.
 
 ## The Multi-Pull function and Google's limits
 
-Google limits all custom functions to 30 seconds or less. If a custom function exceeds this time, an '#ERROR' type is returned indicating as such. Since the multi-pull function is only making individual calls for a list of items, you may run into this limit from time to time. How many items you can put into an item ID list will depend on a number of factors including: the CREST server response time to Google, Google's server performance, the amount of data to sort through for each item.
+~~Google limits all custom functions to 30 seconds or less. If a custom function exceeds this time, an '#ERROR' type is returned indicating as such. Since the multi-pull function is only making individual calls for a list of items, you may run into this limit from time to time. How many items you can put into an item ID list will depend on a number of factors including: the CREST server response time to Google, Google's server performance, the amount of data to sort through for each item.
 
-If you hit the limit, reduce your item ID list by half, and observe behavior. If it continues, repeat the cleave until you're stable. If it stabilizes, then now you have a min-max range for your particular case, and you can continue to tinker within that range where you feel comfortable.
+If you hit the limit, reduce your item ID list by half, and observe behavior. If it continues, repeat the cleave until you're stable. If it stabilizes, then now you have a min-max range for your particular case, and you can continue to tinker within that range where you feel comfortable.~~
+
+This section describes a function that has been removed. This section will remain until the 13-series is released, at which point it will be removed.
 
 # Questions, Comments, Feedback
 
 If you have any questions on how to use the functions, comments on what could be improved, general feedback on the script, this README, or bugs - do not hesitate to contact me. I also help in custom implementations if your corp has some workflow that doesn't quite fit into the script's feature set.
 
-Reddit (best method): /u/nuadi
-
-Twitter: @nuadibantine
+Email: nuadi.bantine@gmail.com
 
 If you have a GitHub account, feel free to create issues, feature requests, etc.
