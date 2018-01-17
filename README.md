@@ -125,7 +125,7 @@ The return value is the price for that item at a given station based on the orde
 
 Your formula should look something like this:
 
-    =getStationMarketPrice(29668, 10000032, 60011866, "sell", 1)
+    =getStationMarketPrice(29668; 10000032; 60011866; "sell"; 1)
 
 * 29668 : whatever item ID of the product you want prices for, in this case it's PLEX
 * 10000032 : the region ID for the market of interest, in this case it's Sinq Laison
