@@ -1,3 +1,19 @@
+# Shutting it down
+
+And so it has come  
+The day on my list for months  
+The plug has been pulled
+
+That is my haiku in honor of the XML and CREST shutdown yesterday. You can read more here: https://developers.eveonline.com/blog/article/a-eulogy-for-xml-crest
+
+With that, I am officially shutting this project down. I will leave this repository in place in case anyone wants to fork it and run with it. I've had this date on my docket since it was announced, and have never had time to refactor the project to use ESI. I realized this evening that I don't even use this script any longer. I have migrated all core functionality to a set of Python tools that I've written to manage my day-to-day operations.
+
+If you haven't already, head over to https://github.com/Blacksmoke16/GESI and start using that. I have no idea how my script translates to his, so I wish you the best of luck.
+
+~nuadi
+
+----
+
 # Google CREST/ESI Script (GCES)
 GCES is a Google Code script designed for use in Google Sheets. It provides custom functions for accessing the endpoints within EVE Online's CREST/ESI web service.
 
